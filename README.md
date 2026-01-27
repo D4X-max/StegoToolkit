@@ -1,10 +1,10 @@
-# 🛡️ StegoToolkit: Advanced Applied Cryptography Suite
+#  StegoToolkit: Advanced Applied Cryptography Suite
 
 **StegoToolkit** is a high-performance security application designed for hiding and detecting encrypted data within digital media. Utilizing **AES-256-CBC** encryption and **NumPy-optimized vectorized LSB** (Least Significant Bit) injection, it offers a robust platform for secure communication and forensic image analysis.
 
 
 
-## ✨ Key Features
+##  Key Features
 
 * **Image Steganography:** Hide encrypted text inside PNG/BMP files using bit-plane manipulation.
 * **AES-256 Security:** All payloads are encrypted using industry-standard AES-256-CBC with PKCS7 padding and PBKDF2 key derivation.
@@ -15,7 +15,7 @@
 
 ---
 
-## 🚀 Getting Started
+##  Getting Started
 
 ### 1. Prerequisites
 Ensure you have **Python 3.10+** installed on your system.
