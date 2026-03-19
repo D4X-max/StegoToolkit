@@ -2,6 +2,8 @@ import numpy as np
 from PIL import Image
 import os
 from scipy.stats import chisquare
+import joblib # for ML model loading
+from sklearn.ensemble import RandomForestClassifier
 
 # --- CORE STEGANOGRAPHY ---
 
@@ -70,68 +72,71 @@ def get_image_capacity(image_path):
 
 
 
-def analyze_anomaly_with_heatmap(image_path, heatmap_output_path):
-    img = Image.open(image_path).convert("L")  # grayscale for simplicity
-    pixels = np.array(img)
-
-    # Extract LSB
+# --- ML HELPER ---
+def extract_forensic_features(pixels):
+    """Converts image pixels into a numerical feature vector for the ML model."""
     lsb = pixels & 1
-
-    # --- 1. Global Ratio ---
+    
+    # 1. Global Ratio
     ones_ratio = np.mean(lsb)
-
-    # --- 2. Local Block Analysis ---
+    
+    # 2. Local Variation (8x8 blocks)
     block_size = 8
     h, w = lsb.shape
     block_scores = []
-
-    for i in range(0, h, block_size):
-        for j in range(0, w, block_size):
+    for i in range(0, h - block_size, block_size):
+        for j in range(0, w - block_size, block_size):
             block = lsb[i:i+block_size, j:j+block_size]
-            if block.size == 0:
-                continue
-            block_ratio = np.mean(block)
-            block_scores.append(abs(block_ratio - 0.5))
-
-    local_variation = np.mean(block_scores)
-
-    # --- 3. Chi-Square Test ---
-    hist, _ = np.histogram(pixels.flatten(), bins=256, range=(0,256))
+            block_scores.append(abs(np.mean(block) - 0.5))
+    local_variation = np.mean(block_scores) if block_scores else 0.5
     
-    even = hist[::2]
-    odd = hist[1::2]
-    observed = even + odd
+    # 3. Chi-Square Statistic
+    hist, _ = np.histogram(pixels.flatten(), bins=256, range=(0,256))
+    observed = hist[::2] + hist[1::2]
     expected = np.concatenate([observed/2, observed/2])
-
     chi_stat = np.sum(((hist - expected)**2) / (expected + 1e-6))
+    
+    return np.array([ones_ratio, local_variation, chi_stat])
 
-    # --- 4. Heatmap (variance-based) ---
-    heatmap = np.abs(lsb - 0.5) * 255
-    heatmap_img = Image.fromarray(heatmap.astype('uint8'))
+# --- UPDATED ANALYZE FUNCTION ---
+def analyze_anomaly_with_heatmap(image_path, heatmap_output_path):
+    """
+    Uses a pre-trained Random Forest model to classify the image.
+    Falls back to heuristic logic if model is missing.
+    """
+    img = Image.open(image_path).convert("L")
+    pixels = np.array(img)
+    
+    # Generate the visual heatmap (keep this for the UI)
+    lsb_plane = (pixels & 1) * 255
+    heatmap_img = Image.fromarray(lsb_plane.astype('uint8'))
     heatmap_img.save(heatmap_output_path)
-
-    # --- Decision Logic ---
-    suspicious_score = 0
-
-    if 0.48 < ones_ratio < 0.52:
-        suspicious_score += 1
-
-    if local_variation < 0.05:  # too uniform
-        suspicious_score += 1
-
-    if chi_stat < 200:  # low chi-square = suspicious
-        suspicious_score += 1
-
-    if suspicious_score >= 2:
-        status = "Suspicious"
-        msg = f"Possible steganography detected (score={suspicious_score})"
+    
+    # Extract features for the model
+    features = extract_forensic_features(pixels).reshape(1, -1)
+    
+    model_path = 'stego_model.pkl'
+    
+    if os.path.exists(model_path):
+        # --- ML PATH ---
+        model = joblib.load(model_path)
+        prediction = model.predict(features)[0]
+        probability = model.predict_proba(features)[0][1] 
+        
+        status = "Suspicious" if probability > 0.55 else "Clean"
+        confidence = f"{round(probability * 100, 1)}%"
+        msg = f"ML Engine: Statistical patterns suggest {status} intent."
     else:
-        status = "Clean"
-        msg = "No strong steganographic patterns detected"
+        # --- BACKUP: HEURISTIC PATH (If you haven't trained yet) ---
+        ones_ratio, local_var, chi = features[0]
+        is_suspicious = (0.48 < ones_ratio < 0.52) and (local_var < 0.05)
+        status = "Suspicious" if is_suspicious else "Clean"
+        confidence = "Heuristic-Only"
+        msg = "Heuristic: LSB distribution is abnormally uniform."
 
     return {
         "status": status,
-        "confidence": f"{suspicious_score}/3",
+        "confidence": confidence,
         "message": msg,
         "heatmap_url": f"/outputs/{os.path.basename(heatmap_output_path)}"
     }

@@ -33,3 +33,6 @@ dist/
 build/
 *.egg-info/
 *.zip               # Ignore the batch processing output zips
+
+CleanImages/ 
+uploads/
