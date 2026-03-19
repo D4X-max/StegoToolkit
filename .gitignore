@@ -34,5 +34,27 @@ build/
 *.egg-info/
 *.zip               # Ignore the batch processing output zips
 
-training_data/       # Ignore raw training datasets
+# --- ML Training Data ---
+training_data/      # Ignore the entire training folder
+temp_train.png      # Ignore the temporary stego file created during training
+stego_model.pkl     # Optional: Ignore the model if you want to retrain on each machine
+                    # (Keep it if you want the "brain" to stay with the code)
+
+# --- General Housekeeping ---
+.DS_Store           # macOS garbage
+Thumbs.db           # Windows garbage
+__pycache__/        # Python bytecode
 uploads/
+
+# Ignore the entire training folder and its contents
+training_data/
+
+# Ignore any temporary files created during the script run
+temp_train.png
+
+# Ignore the model if you don't want to commit it
+stego_model.pkl
+
+# Ignore any loose images in the root (but keep static folder)
+*.png
+!static/
