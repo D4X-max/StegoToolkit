@@ -34,5 +34,5 @@ build/
 *.egg-info/
 *.zip               # Ignore the batch processing output zips
 
-CleanImages/ 
+training_data/       # Ignore raw training datasets
 uploads/
