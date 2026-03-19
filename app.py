@@ -1,6 +1,9 @@
 import os
 import io
 import zipfile
+import base64
+from io import BytesIO
+from PIL import Image
 from flask import Flask, render_template, request, send_file, jsonify, send_from_directory
 from aes import encrypt_data, decrypt_data
 from stego.lsb import hide_lsb, extract_lsb, analyze_anomaly_with_heatmap, get_image_capacity
@@ -12,15 +15,25 @@ app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 OUTPUT_FOLDER = 'outputs'
 socketio = SocketIO(app, cors_allowed_origins="*")
+CARRIER_PATH = "static/favicon.ico.png"  
 
 # Ensure directories exist
 for folder in [UPLOAD_FOLDER, OUTPUT_FOLDER]:
     if not os.path.exists(folder):
         os.makedirs(folder)
 
+# --- NAVIGATION ROUTES ---
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/local')
+def local_toolkit():
+    return render_template('local.html')
+
+@app.route('/live')
+def live_chat():
+    return render_template('live.html')
 
 # --- IMAGE PROCESSING ---
 @app.route('/process/image', methods=['POST'])
@@ -81,13 +94,8 @@ def handle_detection():
     heatmap_path = os.path.join(OUTPUT_FOLDER, heatmap_filename)
     
     try:
-        # Perform forensic analysis
         result = analyze_anomaly_with_heatmap(filepath, heatmap_path)
-        
-        # Cleanup original
         if os.path.exists(filepath): os.remove(filepath)
-        
-        # Result already contains status, confidence, and heatmap_url
         return jsonify(result)
     except Exception as e:
         if os.path.exists(filepath): os.remove(filepath)
@@ -134,7 +142,6 @@ def process_batch():
                 
                 zf.write(output_path, arcname=output_filename)
                 
-                # Cleanup
                 if os.path.exists(temp_in): os.remove(temp_in)
                 if os.path.exists(output_path): os.remove(output_path)
         
@@ -148,7 +155,7 @@ def process_batch():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# --- PDF & TEXT UTILS ---
+# --- PDF PROCESSING ---
 @app.route('/process/pdf', methods=['POST'])
 def process_pdf():
     mode = request.form.get('mode')
@@ -172,34 +179,55 @@ def process_pdf():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-# Serving static outputs (Heatmaps)
+# Serving static outputs
 @app.route('/outputs/<path:filename>')
 def custom_static(filename):
     return send_from_directory(OUTPUT_FOLDER, filename)
 
-@app.route('/')
-def home():
-    # This renders the new "Hub" with the 2 cards
-    return render_template('index.html')
-
-@app.route('/local')
-def local_toolkit():
-    # This renders your ORIGINAL toolkit (the code you shared above)
-    # Note: Make sure you rename your original file to local.html
-    return render_template('local.html')
-
-@app.route('/live')
-def live_chat():
-    # This renders the new Live Chat UI I provided earlier
-    return render_template('live.html')
-
 # --- SOCKET EVENTS FOR LIVE CHAT ---
+
 @socketio.on('send_secure_msg')
 def handle_send(data):
-    # Your logic to encrypt via aes.py and hide via lsb.py
-    # Then emit('new_stego_packet', ...)
-    pass
+    """ Receives {msg, password, carrier?} -> Broadcasts {image_b64} to others """
+    try:
+        # 1. Encrypt text
+        encrypted_payload = encrypt_data(data['msg'], data['password'])
+        
+        # 2. Determine Carrier (User Uploaded vs Default)
+        if data.get('carrier'):
+            header, encoded = data['carrier'].split(",", 1) if "," in data['carrier'] else (None, data['carrier'])
+            carrier_source = BytesIO(base64.b64decode(encoded))
+        else:
+            carrier_source = CARRIER_PATH
+
+        # 3. Hide in Image
+        buf = BytesIO()
+        hide_lsb(carrier_source, encrypted_payload, buf)
+        buf.seek(0)
+        
+        # 4. Convert to Base64
+        img_b64 = base64.b64encode(buf.read()).decode('utf-8')
+        
+        # 5. Differentiate: Confirm to sender, Broadcast to others
+        emit('sent_confirmation', {'status': 'SUCCESS'})
+        emit('new_stego_packet', {'image': img_b64}, broadcast=True, include_self=False)
+        
+    except Exception as e:
+        emit('error', {'message': str(e)})
+
+@socketio.on('decrypt_packet')
+def handle_decrypt(data):
+    """ Receives {image_b64, password} -> Returns {decrypted_text} """
+    try:
+        img_data = base64.b64decode(data['image'])
+        img_buf = BytesIO(img_data)
+        
+        encrypted_payload = extract_lsb(img_buf)
+        decrypted_text = decrypt_data(encrypted_payload, data['password'])
+        
+        emit('decrypted_result', {'msg': decrypted_text})
+    except Exception as e:
+        emit('decrypted_result', {'msg': "DECRYPTION_FAILED: Invalid Key or Corrupted Packet"})
 
 if __name__ == '__main__':
-    # Use socketio.run instead of app.run
     socketio.run(app, debug=True, port=5000)

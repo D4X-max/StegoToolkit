@@ -6,19 +6,20 @@
     <title>StegoToolkit | Live Chat</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
+    />
     <style>
       @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap");
-
       body {
-        font-family: "JetBrains+Mono", monospace;
+        font-family: "JetBrains Mono", monospace;
       }
-
       .glass {
         background: rgba(255, 255, 255, 0.03);
         backdrop-filter: blur(12px);
         border: 1px solid rgba(255, 255, 255, 0.1);
       }
-
       .custom-scrollbar::-webkit-scrollbar {
         width: 4px;
       }
@@ -29,12 +30,9 @@
         background: #1e293b;
         border-radius: 10px;
       }
-
       .glow-blue {
         box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
       }
-
-      /* Animation for new packets */
       @keyframes slideIn {
         from {
           opacity: 0;
@@ -63,26 +61,20 @@
             LIVE_STEGO_STREAM
           </h1>
         </div>
-        <div class="flex items-center gap-3">
-          <span
-            class="text-[10px] font-bold text-slate-500 tracking-[0.2em] hidden md:block"
-            >ENCRYPTION: AES-256-CBC</span
+        <div
+          class="flex items-center gap-2 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20"
+        >
+          <span class="relative flex h-2 w-2">
+            <span
+              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
+            ></span>
+            <span
+              class="relative inline-flex rounded-full h-2 w-2 bg-green-500"
+            ></span>
+          </span>
+          <span class="text-[10px] text-green-500 font-bold uppercase"
+            >Socket_Active</span
           >
-          <div
-            class="flex items-center gap-2 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20"
-          >
-            <span class="relative flex h-2 w-2">
-              <span
-                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
-              ></span>
-              <span
-                class="relative inline-flex rounded-full h-2 w-2 bg-green-500"
-              ></span>
-            </span>
-            <span class="text-[10px] text-green-500 font-bold uppercase"
-              >Socket_Active</span
-            >
-          </div>
         </div>
       </div>
     </nav>
@@ -104,10 +96,9 @@
               >0 PACKETS</span
             >
           </div>
-
           <div
             id="packetFeed"
-            class="grid grid-cols-2 md:grid-cols-3 gap-4 h-[420px] overflow-y-auto pr-2 custom-scrollbar content-start"
+            class="grid grid-cols-2 md:grid-cols-3 gap-4 h-[380px] overflow-y-auto pr-2 custom-scrollbar content-start"
           >
             <div
               id="emptyFeed"
@@ -120,25 +111,44 @@
         </div>
 
         <div class="glass rounded-2xl p-6 border-blue-500/20">
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div class="relative">
+              <input
+                id="customCarrier"
+                type="file"
+                accept="image/png, image/bmp"
+                class="hidden"
+                onchange="previewCarrier(this)"
+              />
+              <button
+                onclick="document.getElementById('customCarrier').click()"
+                class="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-[10px] font-bold text-slate-500 hover:border-blue-500/50 transition-all flex justify-between items-center uppercase tracking-tighter"
+              >
+                <span id="fileNameDisplay">Select_Carrier_Image</span>
+                <i class="fas fa-camera"></i>
+              </button>
+            </div>
             <input
               id="passphrase"
               type="password"
               placeholder="SET_AES_KEY"
               class="bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus:border-blue-500/50 outline-none text-sm transition-all"
             />
-            <input
+          </div>
+          <div class="relative mb-4">
+            <textarea
               id="chatInput"
-              type="text"
+              rows="2"
               placeholder="ENTER_SECRET_PAYLOAD..."
-              class="md:col-span-2 bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus:border-blue-500/50 outline-none text-sm transition-all"
-            />
+              class="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus:border-blue-500/50 outline-none text-sm transition-all resize-none"
+            ></textarea>
           </div>
           <button
+            id="executeBtn"
             onclick="sendSecret()"
-            class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-900/20 active:scale-[0.98]"
+            class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg active:scale-[0.98] uppercase text-xs tracking-[0.2em]"
           >
-            EXECUTE_PROTOCOL_SEND
+            Execute_Protocol_Send
           </button>
         </div>
       </div>
@@ -156,23 +166,16 @@
           </h2>
           <button
             onclick="clearStream()"
-            class="text-[10px] text-slate-600 hover:text-slate-400 transition-colors"
+            class="text-[10px] text-slate-600 hover:text-slate-400"
           >
-            CLEAR_LOG
+            CLEAR
           </button>
         </div>
-
         <div
           id="kernelStream"
-          class="flex-1 p-5 font-mono text-[11px] space-y-3 overflow-y-auto h-[580px] leading-relaxed custom-scrollbar"
+          class="flex-1 p-5 font-mono text-[11px] space-y-3 overflow-y-auto h-[550px] leading-relaxed custom-scrollbar"
         >
-          <div class="text-slate-600 italic">
-            -- System Boot Sequence Complete --
-          </div>
-          <div class="text-slate-500">[*] Handshaking with Gateway...</div>
-          <div class="text-blue-500/80">
-            [*] AES-256-CBC engine initialized at 100000 iterations.
-          </div>
+          <div class="text-slate-600 italic">-- System Online --</div>
         </div>
       </div>
     </main>
@@ -181,62 +184,99 @@
       const socket = io();
       let pCount = 0;
 
-      // Initialize connection
       socket.on("connect", () => {
-        addToKernel(
-          "Handshake Successful. Secure Tunnel Established.",
-          "text-green-500",
-        );
+        addToKernel("Secure Tunnel Established.", "text-green-500");
       });
 
-      function sendSecret() {
+      function previewCarrier(input) {
+        const fileName = input.files[0]?.name || "Select_Carrier_Image";
+        document.getElementById("fileNameDisplay").innerText =
+          fileName.slice(0, 20) + (fileName.length > 20 ? "..." : "");
+        addToKernel(`[SYSTEM]: Carrier loaded: ${fileName}`, "text-blue-400");
+      }
+
+      async function sendSecret() {
         const msg = document.getElementById("chatInput").value;
         const pass = document.getElementById("passphrase").value;
+        const fileInput = document.getElementById("customCarrier");
+        const btn = document.getElementById("executeBtn");
 
         if (!msg || !pass) {
-          addToKernel(
-            "ERR_INPUT_REQUIRED: Provide both payload and key.",
-            "text-red-400",
-          );
+          addToKernel("ERR: Payload and Key required.", "text-red-400");
           return;
         }
 
-        addToKernel(`[OUTBOUND]: Encrypting and injecting into LSB carrier...`);
-        socket.emit("send_secure_msg", { msg: msg, password: pass });
+        btn.disabled = true;
+        btn.innerText = "ENCODING...";
+
+        let carrierB64 = null;
+        if (fileInput.files[0]) {
+          const reader = new FileReader();
+          carrierB64 = await new Promise((resolve) => {
+            reader.onload = (e) => resolve(e.target.result);
+            reader.readAsDataURL(fileInput.files[0]);
+          });
+        }
+
+        addToKernel(
+          `[OUTBOUND]: Injecting AES payload into carrier...`,
+          "text-blue-400",
+        );
+        socket.emit("send_secure_msg", {
+          msg: msg,
+          password: pass,
+          carrier: carrierB64,
+        });
+
         document.getElementById("chatInput").value = "";
+        btn.disabled = false;
+        btn.innerText = "EXECUTE_PROTOCOL_SEND";
       }
 
+      // Triggered when SENDER successfully pushes a packet
+      socket.on("sent_confirmation", (data) => {
+        addToKernel(
+          "[SUCCESS]: Stego-packet tunneled to peer.",
+          "text-blue-500 font-bold",
+        );
+      });
+
+      // Triggered for the RECEIVER when a packet arrives
       socket.on("new_stego_packet", (data) => {
-        // Remove placeholder
         const empty = document.getElementById("emptyFeed");
         if (empty) empty.remove();
 
-        // Update Feed UI
         pCount++;
         document.getElementById("packetCount").innerText = `${pCount} PACKETS`;
 
         const feed = document.getElementById("packetFeed");
         const container = document.createElement("div");
         container.className =
-          "packet-entry relative group rounded-lg overflow-hidden border border-white/10 hover:border-blue-500/50 transition-all cursor-crosshair";
+          "packet-entry relative group rounded-lg overflow-hidden border border-white/10 hover:border-blue-500/50 transition-all";
         container.innerHTML = `
                 <img src="data:image/png;base64,${data.image}" class="w-full aspect-square object-cover">
-                <div class="absolute inset-0 bg-blue-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span class="text-[10px] font-bold bg-black/80 px-2 py-1 rounded">EXTRACT_LSB</span>
+                <div class="absolute inset-0 bg-blue-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                    <span class="text-[8px] font-bold bg-black px-2 py-1 rounded tracking-tighter">DATA_DETECTED</span>
                 </div>
             `;
         feed.prepend(container);
 
-        addToKernel(`[INBOUND]: Packet #${pCount} intercepted. Type: PNG/LSB.`);
+        addToKernel(
+          `[INBOUND]: Packet intercepted. Entropy analysis suggests hidden data.`,
+          "text-yellow-500",
+        );
 
-        // Auto-attempt Decryption
         const pass = document.getElementById("passphrase").value;
         if (pass) {
+          addToKernel(
+            "[SYSTEM]: Attempting auto-decryption with current key...",
+            "text-slate-500",
+          );
           socket.emit("decrypt_packet", { image: data.image, password: pass });
         } else {
           addToKernel(
-            `[WARN]: No decryption key provided in terminal.`,
-            "text-yellow-500/70",
+            "[NOTICE]: Enter AES key to decode this packet.",
+            "text-slate-500 italic",
           );
         }
       });
@@ -245,7 +285,7 @@
         const isError = data.msg.includes("failed");
         const colorClass = isError
           ? "text-red-400"
-          : "text-green-400 bg-green-500/5 px-2 py-1 rounded border border-green-500/10 block";
+          : "text-green-400 bg-green-500/5 px-2 py-1 rounded border border-green-500/10 block font-bold";
         addToKernel(`[DECODED]: ${data.msg}`, colorClass);
       });
 
@@ -268,6 +308,9 @@
 
       socket.on("error", (data) => {
         addToKernel(`[FATAL_ERR]: ${data.message}`, "text-red-500");
+        document.getElementById("executeBtn").innerText =
+          "EXECUTE_PROTOCOL_SEND";
+        document.getElementById("executeBtn").disabled = false;
       });
     </script>
   </body>
