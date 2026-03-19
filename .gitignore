@@ -1,0 +1,35 @@
+# --- StegoToolkit Specific ---
+uploads/            # Never track user-uploaded images
+outputs/            # Never track generated stego-images or heatmaps
+*.png               # Ignore loose images (except those in static/)
+!static/**/*.png    # Do NOT ignore your UI assets or favicon
+
+# --- Python & Environments ---
+__pycache__/
+*.py[cod]
+*$py.class
+.env                # Critical: Ignore secret keys/environment variables
+venv/
+env/
+ENV/
+.venv/
+stego-env/       
+outputs/
+
+# --- Cryptography & Security ---
+*.pem
+*.key
+*.pub
+*.crt
+.ipynb_checkpoints/ # If you used Jupyter for ML testing
+
+# --- OS Specific ---
+.DS_Store           # macOS
+Thumbs.db           # Windows
+desktop.ini         # Windows
+
+# --- Distribution / Build ---
+dist/
+build/
+*.egg-info/
+*.zip               # Ignore the batch processing output zips

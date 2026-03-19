@@ -1,6 +1,7 @@
 import numpy as np
 from PIL import Image
 import os
+from scipy.stats import chisquare
 
 # --- CORE STEGANOGRAPHY ---
 
@@ -70,35 +71,67 @@ def get_image_capacity(image_path):
 
 
 def analyze_anomaly_with_heatmap(image_path, heatmap_output_path):
-    """
-    Original stable detection: 
-    Visualizes the LSB plane to reveal patterns and checks global LSB density.
-    """
-    img = Image.open(image_path).convert("RGB")
+    img = Image.open(image_path).convert("L")  # grayscale for simplicity
     pixels = np.array(img)
+
+    # Extract LSB
+    lsb = pixels & 1
+
+    # --- 1. Global Ratio ---
+    ones_ratio = np.mean(lsb)
+
+    # --- 2. Local Block Analysis ---
+    block_size = 8
+    h, w = lsb.shape
+    block_scores = []
+
+    for i in range(0, h, block_size):
+        for j in range(0, w, block_size):
+            block = lsb[i:i+block_size, j:j+block_size]
+            if block.size == 0:
+                continue
+            block_ratio = np.mean(block)
+            block_scores.append(abs(block_ratio - 0.5))
+
+    local_variation = np.mean(block_scores)
+
+    # --- 3. Chi-Square Test ---
+    hist, _ = np.histogram(pixels.flatten(), bins=256, range=(0,256))
     
-    # Create a visual Bit-Plane (LSB * 255 to make it visible)
-    lsb_plane = (pixels & 1) * 255
-    
-    # Calculate global density
-    lsb_flat = pixels.flatten() & 1
-    ones_ratio = np.mean(lsb_flat)
-    
-    # Standard threshold logic
-    is_suspicious = 0.47 < ones_ratio < 0.53
-    
-    # Save the LSB visualization
-    heatmap_img = Image.fromarray(lsb_plane.astype('uint8'), 'RGB')
+    even = hist[::2]
+    odd = hist[1::2]
+    observed = even + odd
+    expected = np.concatenate([observed/2, observed/2])
+
+    chi_stat = np.sum(((hist - expected)**2) / (expected + 1e-6))
+
+    # --- 4. Heatmap (variance-based) ---
+    heatmap = np.abs(lsb - 0.5) * 255
+    heatmap_img = Image.fromarray(heatmap.astype('uint8'))
     heatmap_img.save(heatmap_output_path)
 
-    if is_suspicious:
-        status, msg = "Suspicious", f"LSB distribution is abnormally uniform ({ones_ratio:.4f})."
+    # --- Decision Logic ---
+    suspicious_score = 0
+
+    if 0.48 < ones_ratio < 0.52:
+        suspicious_score += 1
+
+    if local_variation < 0.05:  # too uniform
+        suspicious_score += 1
+
+    if chi_stat < 200:  # low chi-square = suspicious
+        suspicious_score += 1
+
+    if suspicious_score >= 2:
+        status = "Suspicious"
+        msg = f"Possible steganography detected (score={suspicious_score})"
     else:
-        status, msg = "Clean", "LSB distribution matches natural noise."
+        status = "Clean"
+        msg = "No strong steganographic patterns detected"
 
     return {
         "status": status,
-        "confidence": "N/A",
+        "confidence": f"{suspicious_score}/3",
         "message": msg,
         "heatmap_url": f"/outputs/{os.path.basename(heatmap_output_path)}"
     }
