@@ -252,34 +252,48 @@
         const feed = document.getElementById("packetFeed");
         const container = document.createElement("div");
         container.className =
-          "packet-entry relative group rounded-lg overflow-hidden border border-white/10 hover:border-blue-500/50 transition-all";
+          "packet-entry relative group rounded-lg overflow-hidden border border-white/10 hover:border-blue-500/50 transition-all cursor-pointer";
+
+        // We added an onclick event to the overlay so you can click to decode manually
         container.innerHTML = `
-                <img src="data:image/png;base64,${data.image}" class="w-full aspect-square object-cover">
-                <div class="absolute inset-0 bg-blue-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                    <span class="text-[8px] font-bold bg-black px-2 py-1 rounded tracking-tighter">DATA_DETECTED</span>
-                </div>
-            `;
+        <img src="data:image/png;base64,${data.image}" class="w-full aspect-square object-cover">
+        <div onclick="manualDecode('${data.image}')" class="absolute inset-0 bg-blue-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
+            <i class="fas fa-unlock-alt mb-1 text-xs"></i>
+            <span class="text-[8px] font-bold bg-black px-2 py-1 rounded tracking-tighter uppercase">Click to Decode</span>
+        </div>
+    `;
         feed.prepend(container);
 
         addToKernel(
-          `[INBOUND]: Packet intercepted. Entropy analysis suggests hidden data.`,
+          `[INBOUND]: Packet #${pCount} intercepted.`,
           "text-yellow-500",
         );
 
+        // Auto-attempt if key is already there
         const pass = document.getElementById("passphrase").value;
         if (pass) {
-          addToKernel(
-            "[SYSTEM]: Attempting auto-decryption with current key...",
-            "text-slate-500",
-          );
           socket.emit("decrypt_packet", { image: data.image, password: pass });
         } else {
           addToKernel(
-            "[NOTICE]: Enter AES key to decode this packet.",
+            "[NOTICE]: Enter AES key to reveal payload.",
             "text-slate-500 italic",
           );
         }
       });
+
+      // ADD THIS NEW FUNCTION BELOW THE socket.on BLOCK
+      function manualDecode(imageB64) {
+        const pass = document.getElementById("passphrase").value;
+        if (!pass) {
+          addToKernel(
+            "ERR: Enter AES key in the terminal first.",
+            "text-red-400",
+          );
+          return;
+        }
+        addToKernel("[SYSTEM]: Retrying decryption with provided key...");
+        socket.emit("decrypt_packet", { image: imageB64, password: pass });
+      }
 
       socket.on("decrypted_result", (data) => {
         const isError = data.msg.includes("failed");
