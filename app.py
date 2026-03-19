@@ -2,14 +2,16 @@ import os
 import io
 import zipfile
 from flask import Flask, render_template, request, send_file, jsonify, send_from_directory
-from crypto.aes import encrypt_data, decrypt_data
+from aes import encrypt_data, decrypt_data
 from stego.lsb import hide_lsb, extract_lsb, analyze_anomaly_with_heatmap, get_image_capacity
 from pdf.pdf_crypto import hide_in_pdf, extract_from_pdf
-from crypto.text_stego import hide_text_in_text, extract_text_from_text
+from text_stego import hide_text_in_text, extract_text_from_text
+from flask_socketio import SocketIO, emit
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
 OUTPUT_FOLDER = 'outputs'
+socketio = SocketIO(app, cors_allowed_origins="*")
 
 # Ensure directories exist
 for folder in [UPLOAD_FOLDER, OUTPUT_FOLDER]:
@@ -175,5 +177,29 @@ def process_pdf():
 def custom_static(filename):
     return send_from_directory(OUTPUT_FOLDER, filename)
 
+@app.route('/')
+def home():
+    # This renders the new "Hub" with the 2 cards
+    return render_template('index.html')
+
+@app.route('/local')
+def local_toolkit():
+    # This renders your ORIGINAL toolkit (the code you shared above)
+    # Note: Make sure you rename your original file to local.html
+    return render_template('local.html')
+
+@app.route('/live')
+def live_chat():
+    # This renders the new Live Chat UI I provided earlier
+    return render_template('live.html')
+
+# --- SOCKET EVENTS FOR LIVE CHAT ---
+@socketio.on('send_secure_msg')
+def handle_send(data):
+    # Your logic to encrypt via aes.py and hide via lsb.py
+    # Then emit('new_stego_packet', ...)
+    pass
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000, use_reloader=False)
+    # Use socketio.run instead of app.run
+    socketio.run(app, debug=True, port=5000)

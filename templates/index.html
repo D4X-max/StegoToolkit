@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>StegoToolkit | Secure Data Embedding</title>
+    <title>StegoToolkit | Operational Hub</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link
       rel="stylesheet"
@@ -11,45 +11,70 @@
     />
     <style>
       @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=JetBrains+Mono&display=swap");
+
       body {
         font-family: "Plus Jakarta Sans", sans-serif;
-        background-color: #0b0f1a;
+        background-color: #05070a;
         color: #e2e8f0;
-      }
-      .mono {
-        font-family: "JetBrains Mono", monospace;
-      }
-      .glass-panel {
-        background: rgba(17, 24, 39, 0.7);
-        backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-      }
-      .tab-active {
-        border-bottom: 2px solid #3b82f6;
-        color: #3b82f6;
-      }
-      /* Capacity Bar Styles */
-      .capacity-bar {
-        height: 4px;
-        background: #1e293b;
-        border-radius: 2px;
         overflow: hidden;
       }
-      .capacity-fill {
-        height: 100%;
-        width: 0%;
-        transition:
-          width 0.5s ease,
-          background 0.3s;
+
+      /* Terminal Boot Overlay */
+      #boot-sequence {
+        position: fixed;
+        inset: 0;
+        background: #05070a;
+        z-index: 100;
+        display: flex;
+        flex-direction: column;
+        padding: 2rem;
+        font-family: "JetBrains Mono", monospace;
+        font-size: 10px;
+        color: #3b82f6;
+        overflow: hidden;
+      }
+
+      .glass-card {
+        background: rgba(17, 24, 39, 0.4);
+        backdrop-filter: blur(20px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      .glass-card:hover {
+        background: rgba(30, 41, 59, 0.6);
+        border-color: rgba(59, 130, 246, 0.3);
+        transform: translateY(-8px);
+        box-shadow:
+          0 20px 40px rgba(0, 0, 0, 0.4),
+          0 0 20px rgba(59, 130, 246, 0.1);
+      }
+
+      .fade-in {
+        animation: fadeIn 1s ease-out forwards;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: scale(0.95);
+        }
+        to {
+          opacity: 1;
+          transform: scale(1);
+        }
       }
     </style>
   </head>
-  <body class="min-h-screen">
-    <nav class="border-b border-white/5 bg-black/20 sticky top-0 z-50">
-      <div
-        class="container mx-auto px-6 py-4 flex justify-between items-center"
-      >
-        <div class="flex items-center space-x-3">
+  <body class="min-h-screen flex flex-col">
+    <div id="boot-sequence">
+      <div id="boot-log" class="space-y-1"></div>
+    </div>
+
+    <div id="main-hub" class="hidden opacity-0 flex-grow flex flex-col">
+      <nav class="p-8">
+        <div
+          class="flex items-center space-x-3 justify-center md:justify-start"
+        >
           <div
             class="bg-gradient-to-tr from-blue-600 to-indigo-600 p-2 rounded-xl shadow-lg"
           >
@@ -59,562 +84,147 @@
             Stego<span class="text-blue-500">Toolkit</span>
           </h1>
         </div>
-        <div
-          class="hidden md:block text-[10px] font-bold uppercase tracking-widest opacity-50 font-mono"
-        >
-          v2.1.0 // Heuristic_Ready
-        </div>
-      </div>
-    </nav>
+      </nav>
 
-    <main class="container mx-auto px-6 py-8 max-w-6xl">
-      <div
-        class="flex space-x-8 mb-8 border-b border-white/5 text-sm font-semibold text-slate-500 overflow-x-auto"
-      >
-        <button
-          onclick="switchTab('single')"
-          id="tab-single"
-          class="pb-4 tab-active whitespace-nowrap"
-        >
-          Single Image
-        </button>
-        <button
-          onclick="switchTab('batch')"
-          id="tab-batch"
-          class="pb-4 hover:text-slate-300 whitespace-nowrap text-indigo-400"
-        >
-          Batch Processing
-        </button>
-        <button
-          onclick="switchTab('pdf')"
-          id="tab-pdf"
-          class="pb-4 hover:text-slate-300 whitespace-nowrap text-blue-400"
-        >
-          PDF Metadata
-        </button>
-        <button
-          onclick="switchTab('detect')"
-          id="tab-detect"
-          class="pb-4 hover:text-slate-300 whitespace-nowrap text-red-400"
-        >
-          Anomaly Detection
-        </button>
-      </div>
-
-      <div class="grid lg:grid-cols-3 gap-8">
-        <div class="lg:col-span-2 space-y-6">
-          <section
-            id="section-single"
-            class="glass-panel rounded-2xl p-8 shadow-2xl"
-          >
-            <h2 class="text-lg font-bold mb-6 flex items-center">
-              <i class="fas fa-image mr-3 text-blue-500"></i>Image Steganography
-            </h2>
-            <form id="imageForm" class="space-y-4">
-              <input type="hidden" name="mode" value="hide" id="imgModeInput" />
-              <div class="grid grid-cols-2 gap-4 mb-4">
-                <button
-                  type="button"
-                  onclick="setImgMode('hide')"
-                  id="btn-m-hide"
-                  class="py-2 rounded-lg border border-blue-500 bg-blue-500/20 text-xs font-bold text-blue-400"
-                >
-                  ENCODE
-                </button>
-                <button
-                  type="button"
-                  onclick="setImgMode('extract')"
-                  id="btn-m-extract"
-                  class="py-2 rounded-lg border border-white/10 bg-white/5 text-xs font-bold"
-                >
-                  DECODE
-                </button>
-              </div>
-              <div class="space-y-2">
-                <input
-                  type="file"
-                  id="singleFileInput"
-                  name="file"
-                  accept="image/png, image/bmp"
-                  class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm"
-                  required
-                />
-                <div id="capacityContainer" class="hidden space-y-1 px-1">
-                  <div
-                    class="flex justify-between text-[10px] font-bold uppercase"
-                  >
-                    <span class="text-slate-500">Storage Capacity</span>
-                    <span id="capacityText" class="text-blue-400"
-                      >0 / 0 Bytes</span
-                    >
-                  </div>
-                  <div class="capacity-bar">
-                    <div
-                      id="capacityFill"
-                      class="capacity-fill bg-blue-500"
-                    ></div>
-                  </div>
-                </div>
-              </div>
-              <input
-                type="password"
-                name="password"
-                placeholder="Passphrase"
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm focus:border-blue-500 outline-none"
-                required
-              />
-              <textarea
-                name="text"
-                id="imgText"
-                rows="4"
-                placeholder="Payload string..."
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm focus:border-blue-500 outline-none"
-              ></textarea>
-              <button
-                type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-bold transition-all shadow-lg active:scale-95"
-              >
-                EXECUTE PROTOCOL
-              </button>
-            </form>
-          </section>
-
-          <section
-            id="section-batch"
-            class="glass-panel rounded-2xl p-8 shadow-2xl hidden"
-          >
-            <h2 class="text-lg font-bold mb-6 flex items-center">
-              <i class="fas fa-layer-group mr-3 text-indigo-500"></i>Batch
-              Encryption Pipeline
-            </h2>
-            <form id="batchForm" class="space-y-4">
-              <input
-                type="file"
-                name="files"
-                accept="image/png, image/bmp"
-                multiple
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm"
-                required
-              />
-              <input
-                type="password"
-                name="password"
-                placeholder="Passphrase"
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm outline-none"
-                required
-              />
-              <textarea
-                name="text"
-                rows="4"
-                placeholder="Universal Payload..."
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm outline-none"
-                required
-              ></textarea>
-              <button
-                type="submit"
-                class="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-xl font-bold shadow-lg"
-              >
-                START BATCH ENCODING
-              </button>
-            </form>
-          </section>
-
-          <section
-            id="section-pdf"
-            class="glass-panel rounded-2xl p-8 shadow-2xl hidden"
-          >
-            <h2 class="text-lg font-bold mb-6 flex items-center">
-              <i class="fas fa-file-pdf mr-3 text-red-500"></i>PDF Metadata
-              Vault
-            </h2>
-            <form id="pdfForm" class="space-y-4">
-              <select
-                name="mode"
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm outline-none"
-              >
-                <option value="hide">Inject Secret</option>
-                <option value="extract">Extract Secret</option>
-              </select>
-              <input
-                type="file"
-                name="file"
-                accept="application/pdf"
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm"
-                required
-              />
-              <input
-                type="password"
-                name="password"
-                placeholder="Passphrase"
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm outline-none"
-                required
-              />
-              <textarea
-                name="text"
-                rows="4"
-                placeholder="Payload..."
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm outline-none"
-              ></textarea>
-              <button
-                type="submit"
-                class="w-full bg-red-600 hover:bg-red-500 py-4 rounded-xl font-bold shadow-lg"
-              >
-                PROCESS DOCUMENT
-              </button>
-            </form>
-          </section>
-
-          <section
-            id="section-detect"
-            class="glass-panel rounded-2xl p-8 shadow-2xl hidden"
-          >
-            <h2 class="text-lg font-bold mb-6 flex items-center text-red-500">
-              <i class="fas fa-search-radiation mr-3"></i>Anomaly Scanner
-            </h2>
-            <form id="detectForm" class="space-y-4">
-              <input
-                type="file"
-                name="file"
-                accept="image/png, image/bmp"
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm"
-                required
-              />
-              <button
-                type="submit"
-                class="w-full bg-red-600 hover:bg-red-500 py-4 rounded-xl font-bold transition-all shadow-lg"
-              >
-                SCAN FOR HIDDEN PAYLOAD
-              </button>
-            </form>
-
-            <div
-              id="detectOutput"
-              class="mt-6 hidden p-6 rounded-xl border border-white/10 bg-black/20"
+      <main class="flex-grow flex flex-col items-center justify-center px-6">
+        <div class="text-center mb-16">
+          <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
+            Operational
+            <span
+              class="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent"
+              >Environments</span
             >
-              <div class="flex justify-between items-end mb-2">
-                <span class="text-xs font-bold uppercase text-slate-500"
-                  >Threat Level</span
-                >
+          </h2>
+          <p
+            class="text-slate-500 font-mono text-[10px] uppercase tracking-[0.4em]"
+          >
+            Select protocol for deployment
+          </p>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-8 w-full max-w-5xl">
+          <a
+            href="/local"
+            class="group glass-card rounded-3xl p-10 flex flex-col"
+          >
+            <div
+              class="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-blue-500/20 transition-colors"
+            >
+              <i class="fas fa-folder-open text-2xl text-blue-500"></i>
+            </div>
+            <h3 class="text-2xl font-bold mb-3">Local Stegotoolkit</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-8">
+              Forensic suite for file analysis. Execute LSB Encoding, PDF
+              Metadata Injection, and Anomaly Scanning.
+            </p>
+            <div
+              class="mt-auto flex items-center text-xs font-bold uppercase tracking-widest text-blue-500"
+            >
+              Launch Local
+              <i
+                class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"
+              ></i>
+            </div>
+          </a>
+
+          <a
+            href="/live"
+            class="group glass-card rounded-3xl p-10 flex flex-col relative overflow-hidden"
+          >
+            <div
+              class="absolute top-6 right-6 flex items-center gap-2 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20"
+            >
+              <span class="relative flex h-2 w-2">
                 <span
-                  id="threatStatus"
-                  class="text-xl font-black uppercase tracking-tighter"
-                  >UNKNOWN</span
-                >
-              </div>
-              <div
-                class="h-2 w-full bg-slate-800 rounded-full overflow-hidden mb-4"
+                  class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
+                ></span>
+                <span
+                  class="relative inline-flex rounded-full h-2 w-2 bg-green-500"
+                ></span>
+              </span>
+              <span class="text-[9px] text-green-500 font-bold uppercase"
+                >Ready</span
               >
-                <div
-                  id="threatBar"
-                  class="h-full transition-all duration-1000"
-                  style="width: 0%"
-                ></div>
-              </div>
-              <p
-                id="threatMsg"
-                class="text-sm text-slate-300 italic font-mono text-[11px] mb-4"
-              ></p>
-              <div
-                id="heatmapContainer"
-                class="hidden border border-white/10 rounded-lg overflow-hidden"
-              >
-                <label
-                  class="block text-[10px] font-bold bg-white/5 p-2 uppercase text-slate-500 border-b border-white/10"
-                  >Entropy Spatial Heatmap</label
-                >
-                <img
-                  id="heatmapImage"
-                  src=""
-                  class="w-full h-auto"
-                  alt="Anomaly Heatmap"
-                />
-              </div>
             </div>
-          </section>
+            <div
+              class="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-indigo-500/20 transition-colors"
+            >
+              <i class="fas fa-bolt text-2xl text-indigo-500"></i>
+            </div>
+            <h3 class="text-2xl font-bold mb-3">Live Stego Chat</h3>
+            <p class="text-slate-400 text-sm leading-relaxed mb-8">
+              Real-time covert link. Tunnel AES-256 encrypted payloads through
+              WebSocket image streams.
+            </p>
+            <div
+              class="mt-auto flex items-center text-xs font-bold uppercase tracking-widest text-indigo-500"
+            >
+              Initialize Live
+              <i
+                class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"
+              ></i>
+            </div>
+          </a>
         </div>
 
-        <div class="space-y-6">
-          <div class="glass-panel rounded-2xl p-6 h-[600px] flex flex-col">
-            <h3
-              class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4 italic"
-            >
-              Kernel_Stream
-            </h3>
-            <div
-              id="console"
-              class="flex-grow mono text-[10px] text-blue-400 overflow-y-auto space-y-2 pr-2"
-            >
-              <div class="text-slate-600">
-                [READY] StegoToolkit Analysis Suite Active
-              </div>
-            </div>
-
-            <div
-              id="resultDisplay"
-              class="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl hidden relative group"
-            >
-              <div class="flex justify-between items-center mb-1">
-                <label class="text-[9px] uppercase font-bold text-blue-400"
-                  >Extracted Payload</label
-                >
-              </div>
-              <div
-                id="resultText"
-                class="mono text-[11px] text-white break-all"
-              ></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
+        <footer
+          class="mt-20 opacity-30 font-mono text-[9px] tracking-[0.5em] uppercase text-center"
+        >
+          dhruv srijit // mit bengaluru // crypt-ops v2.1
+        </footer>
+      </main>
+    </div>
 
     <script>
-      let maxBytes = 0;
+      const logs = [
+        "INITIALIZING BOOT_LOADER_V2.1...",
+        "LOADING CRYPTOGRAPHY_MODULES (AES-256-CBC)...",
+        "CONNECTING TO STEGO_ENGINE... [OK]",
+        "VERIFYING HEURISTIC_SCANNER_CORE... [OK]",
+        "MOUNTING WEBSOCKET_TUNNEL_SERVICE...",
+        "ESTABLISHING SECURE_SESSION_HANDSHAKE...",
+        "SYSTEM_READY: REDIRECTING TO HUB.",
+      ];
 
-      // Tab Switching Logic
-      function switchTab(tab) {
-        // Updated to remove 'text' as it was removed from your UI
-        ["single", "batch", "pdf", "detect"].forEach((t) => {
-          const section = document.getElementById(`section-${t}`);
-          const tabBtn = document.getElementById(`tab-${t}`);
-          if (section) section.classList.add("hidden");
-          if (tabBtn) tabBtn.classList.remove("tab-active");
-        });
+      const logContainer = document.getElementById("boot-log");
 
-        const activeSection = document.getElementById(`section-${tab}`);
-        const activeTab = document.getElementById(`tab-${tab}`);
-        if (activeSection) activeSection.classList.remove("hidden");
-        if (activeTab) activeTab.classList.add("tab-active");
+      async function runBoot() {
+        console.log("Boot sequence started...");
 
-        // Clear previous extraction results when switching tools
-        document.getElementById("resultDisplay").classList.add("hidden");
-        document.getElementById("resultText").innerText = "";
-
-        // Hide detection output if switching away from detection
-        if (tab !== "detect") {
-          document.getElementById("detectOutput").classList.add("hidden");
+        for (let i = 0; i < logs.length; i++) {
+          const p = document.createElement("p");
+          p.innerText = `> ${logs[i]}`;
+          logContainer.appendChild(p);
+          // Scroll to bottom of logs
+          window.scrollTo(0, document.body.scrollHeight);
+          await new Promise((r) => setTimeout(r, 300));
         }
 
-        log(`Module sequence: ${tab.toUpperCase()} initialization...`);
+        console.log("Boot sequence finished. Transitioning...");
+
+        setTimeout(() => {
+          // 1. Hide the boot overlay
+          const bootOverlay = document.getElementById("boot-sequence");
+          bootOverlay.style.display = "none";
+
+          // 2. Show the hub
+          const hub = document.getElementById("main-hub");
+          hub.classList.remove("hidden");
+
+          // 3. Trigger the fade-in
+          setTimeout(() => {
+            hub.classList.add("fade-in");
+            hub.style.opacity = "1";
+            // Restore scrolling if needed
+            document.body.style.overflow = "auto";
+          }, 10);
+
+          console.log("Hub is now visible.");
+        }, 600);
       }
 
-      // Sidebar Logging System
-      function log(msg, type = "info") {
-        const consoleEl = document.getElementById("console");
-        const entry = document.createElement("div");
-        const color =
-          type === "error"
-            ? "text-red-500"
-            : type === "success"
-              ? "text-green-400"
-              : "text-blue-400";
-        entry.innerHTML = `<span class="text-slate-700 font-mono">[${new Date().toLocaleTimeString()}]</span> <span class="${color}">${msg}</span>`;
-        consoleEl.prepend(entry);
-      }
-
-      // Copy to Clipboard Utility
-      function copyToClipboard() {
-        const text = document.getElementById("resultText").innerText;
-        if (!text) return;
-        navigator.clipboard.writeText(text).then(() => {
-          log("Output buffered to clipboard successfully.", "success");
-        });
-      }
-
-      // PDF Metadata Mode Toggle
-      function togglePdfInputs(select) {
-        const textarea = select.form.querySelector('textarea[name="text"]');
-        if (select.value === "extract") {
-          textarea.classList.add("hidden");
-          textarea.value = "";
-        } else {
-          textarea.classList.remove("hidden");
-        }
-      }
-
-      // Image Mode Toggle (Hide/Extract)
-      function setImgMode(mode) {
-        document.getElementById("imgModeInput").value = mode;
-        const isHide = mode === "hide";
-
-        document.getElementById("btn-m-hide").className = isHide
-          ? "py-2 rounded-lg border border-blue-500 bg-blue-500/20 text-xs font-bold text-blue-400"
-          : "py-2 rounded-lg border border-white/10 bg-white/5 text-xs font-bold";
-
-        document.getElementById("btn-m-extract").className = !isHide
-          ? "py-2 rounded-lg border border-blue-500 bg-blue-500/20 text-xs font-bold text-blue-400"
-          : "py-2 rounded-lg border border-white/10 bg-white/5 text-xs font-bold";
-
-        document.getElementById("imgText").classList.toggle("hidden", !isHide);
-        document
-          .getElementById("capacityContainer")
-          .classList.toggle("hidden", !isHide);
-      }
-
-      // CAPACITY CALCULATOR CLIENT LOGIC
-      document.getElementById("singleFileInput").onchange = async function (e) {
-        if (!e.target.files[0]) return;
-        const formData = new FormData();
-        formData.append("file", e.target.files[0]);
-
-        log("Analyzing asset capacity...");
-        try {
-          const res = await fetch("/process/capacity", {
-            method: "POST",
-            body: formData,
-          });
-          const data = await res.json();
-
-          if (data.capacity) {
-            maxBytes = data.capacity;
-            updateCapacityUI(0);
-            document
-              .getElementById("capacityContainer")
-              .classList.remove("hidden");
-            log(`Capacity analyzed: ${maxBytes} bytes available.`, "success");
-          }
-        } catch (err) {
-          log("Capacity analysis failed.", "error");
-        }
-      };
-
-      document.getElementById("imgText").oninput = function (e) {
-        updateCapacityUI(e.target.value.length);
-      };
-
-      function updateCapacityUI(currentLength) {
-        if (maxBytes === 0) return;
-        const percent = Math.min((currentLength / maxBytes) * 100, 100);
-        const fill = document.getElementById("capacityFill");
-        fill.style.width = percent + "%";
-        fill.style.background = percent > 90 ? "#ef4444" : "#3b82f6";
-        document.getElementById("capacityText").innerText =
-          `${currentLength} / ${maxBytes} Bytes`;
-      }
-
-      // MAIN EXECUTION LOGIC (Hide/Extract/Batch/PDF)
-      async function processForm(e, url) {
-        e.preventDefault();
-        const form = e.target;
-        const btn = form.querySelector('button[type="submit"]');
-        const mode = form.mode ? form.mode.value : "hide";
-
-        btn.disabled = true;
-        const originalText = btn.innerText;
-        btn.innerHTML =
-          '<i class="fas fa-compact-disc fa-spin mr-2"></i>PROCESSING...';
-        log(`Initiating stream to ${url}...`);
-
-        try {
-          const response = await fetch(url, {
-            method: "POST",
-            body: new FormData(form),
-          });
-
-          if (!response.ok) throw new Error(await response.text());
-
-          if (mode === "hide" || url.includes("batch")) {
-            const blob = await response.blob();
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = downloadUrl;
-            a.download = url.includes("batch")
-              ? "stego_batch.zip"
-              : "shield_output_asset.png";
-            document.body.appendChild(a);
-            a.click();
-            log("Binary asset emitted successfully.", "success");
-            form.reset();
-            if (url.includes("image")) updateCapacityUI(0);
-          } else {
-            const data = await response.json();
-            const display = document.getElementById("resultDisplay");
-            const textEl = document.getElementById("resultText");
-
-            display.classList.remove("hidden");
-            textEl.innerText = data.result || "No data returned.";
-            log("Extraction complete.", "success");
-            form.reset();
-          }
-        } catch (err) {
-          log(`FAULT DETECTED: ${err.message}`, "error");
-        } finally {
-          btn.disabled = false;
-          btn.innerText = originalText;
-        }
-      }
-
-      // ANOMALY DETECTION HANDLER
-      document.getElementById("detectForm").onsubmit = async (e) => {
-        e.preventDefault();
-        const btn = e.target.querySelector("button");
-        const out = document.getElementById("detectOutput");
-
-        btn.disabled = true;
-        btn.innerHTML =
-          '<i class="fas fa-search-plus fa-spin mr-2"></i>SCANNING...';
-        log("Running heuristic bit-plane analysis...");
-
-        try {
-          const response = await fetch("/process/detect", {
-            method: "POST",
-            body: new FormData(e.target),
-          });
-          const data = await response.json();
-
-          if (data.error) throw new Error(data.error);
-
-          // Update UI Elements
-          document.getElementById("threatStatus").innerText =
-            data.status || "UNKNOWN";
-          document.getElementById("threatMsg").innerText =
-            data.message || "No message returned.";
-
-          const barEl = document.getElementById("threatBar");
-          const statusEl = document.getElementById("threatStatus");
-
-          if (data.status === "High Probability") {
-            statusEl.className = "text-xl font-black threat-high";
-            barEl.style.width = "95%";
-            barEl.className = "h-full bg-red-500 transition-all duration-1000";
-          } else if (data.status === "Suspicious") {
-            statusEl.className = "text-xl font-black threat-med";
-            barEl.style.width = "60%";
-            barEl.className =
-              "h-full bg-amber-500 transition-all duration-1000";
-          } else {
-            statusEl.className = "text-xl font-black threat-low";
-            barEl.style.width = "15%";
-            barEl.className =
-              "h-full bg-emerald-500 transition-all duration-1000";
-          }
-
-          // Handle Heatmap
-          const hMapImg = document.getElementById("heatmapImage");
-          const hMapCont = document.getElementById("heatmapContainer");
-          if (data.heatmap_url) {
-            hMapImg.src = data.heatmap_url + "?t=" + new Date().getTime();
-            hMapCont.classList.remove("hidden");
-          }
-
-          out.classList.remove("hidden");
-          log("Heuristic analysis complete.", "success");
-        } catch (err) {
-          log(`SCANNER_FAULT: ${err.message}`, "error");
-        } finally {
-          btn.disabled = false;
-          btn.innerText = "SCAN FOR HIDDEN PAYLOAD";
-        }
-      };
-
-      // Form Bindings
-      document.getElementById("imageForm").onsubmit = (e) =>
-        processForm(e, "/process/image");
-      document.getElementById("batchForm").onsubmit = (e) =>
-        processForm(e, "/process/batch");
-      document.getElementById("pdfForm").onsubmit = (e) =>
-        processForm(e, "/process/pdf");
-      // Note: textForm binding removed as requested
+      // Run on load
+      window.onload = runBoot;
     </script>
   </body>
 </html>
