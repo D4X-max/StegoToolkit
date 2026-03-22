@@ -3,328 +3,744 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>StegoToolkit | Live Chat</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>StegoToolkit | Live Stream</title>
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap");
+      :root {
+        --bg: #07090f;
+        --srf: #0d1117;
+        --s2: #111827;
+        --bdr: #1c2333;
+        --bdr2: #253045;
+        --cyan: #00f5ff;
+        --violet: #bf5af2;
+        --green: #30d158;
+        --orange: #ff9f0a;
+        --red: #ff453a;
+        --text: #e8edf5;
+        --sub: #6b7c93;
+        --faint: #1a2332;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
       body {
-        font-family: "JetBrains Mono", monospace;
+        height: 100%;
+        overflow: hidden;
       }
-      .glass {
-        background: rgba(255, 255, 255, 0.03);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+
+      body {
+        font-family: "DM Sans", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        display: flex;
+        flex-direction: column;
       }
-      .custom-scrollbar::-webkit-scrollbar {
-        width: 4px;
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 3px,
+          rgba(0, 0, 0, 0.05) 3px,
+          rgba(0, 0, 0, 0.05) 4px
+        );
       }
-      .custom-scrollbar::-webkit-scrollbar-track {
+
+      /* Glow blobs */
+      .blob {
+        position: fixed;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 0;
+        filter: blur(80px);
+      }
+      .blob-1 {
+        width: 500px;
+        height: 500px;
+        background: rgba(0, 245, 255, 0.04);
+        top: -100px;
+        left: -100px;
+      }
+      .blob-2 {
+        width: 400px;
+        height: 400px;
+        background: rgba(191, 90, 242, 0.04);
+        bottom: -80px;
+        right: -80px;
+      }
+
+      ::-webkit-scrollbar {
+        width: 3px;
+      }
+      ::-webkit-scrollbar-track {
         background: transparent;
       }
-      .custom-scrollbar::-webkit-scrollbar-thumb {
-        background: #1e293b;
-        border-radius: 10px;
+      ::-webkit-scrollbar-thumb {
+        background: var(--bdr2);
+        border-radius: 3px;
       }
-      .glow-blue {
-        box-shadow: 0 0 20px rgba(59, 130, 246, 0.1);
+
+      /* ── NAV ── */
+      nav {
+        position: relative;
+        z-index: 10;
+        flex-shrink: 0;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 36px;
+        background: rgba(7, 9, 15, 0.95);
+        backdrop-filter: blur(24px);
+        border-bottom: 1px solid var(--bdr);
       }
-      @keyframes slideIn {
+      .nav-l {
+        display: flex;
+        align-items: center;
+        gap: 20px;
+      }
+      .back-link {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        text-decoration: none;
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        color: var(--sub);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        transition: color 0.2s;
+      }
+      .back-link:hover {
+        color: var(--text);
+      }
+      .page-ttl {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 20px;
+        letter-spacing: 0.1em;
+        color: var(--cyan);
+        text-shadow: 0 0 20px rgba(0, 245, 255, 0.4);
+      }
+      .live-badge {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        background: rgba(48, 209, 88, 0.07);
+        border: 1px solid rgba(48, 209, 88, 0.2);
+        border-radius: 100px;
+        padding: 6px 14px;
+      }
+      .ring {
+        width: 8px;
+        height: 8px;
+        position: relative;
+      }
+      .ring span {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: var(--green);
+      }
+      .ring span:first-child {
+        animation: ping 1.4s ease-in-out infinite;
+        opacity: 0.5;
+      }
+      @keyframes ping {
+        75%,
+        100% {
+          transform: scale(2.2);
+          opacity: 0;
+        }
+      }
+      .live-lbl {
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        color: var(--green);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      /* ── GRID ── */
+      .grid {
+        position: relative;
+        z-index: 1;
+        flex: 1;
+        overflow: hidden;
+        display: grid;
+        grid-template-columns: 1fr 320px;
+        min-height: 0;
+      }
+
+      /* ── FEED COL ── */
+      .feed-col {
+        display: flex;
+        flex-direction: column;
+        border-right: 1px solid var(--bdr);
+        min-height: 0;
+      }
+
+      .feed-hd {
+        flex-shrink: 0;
+        padding: 16px 24px;
+        border-bottom: 1px solid var(--bdr);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .feed-hd-title {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 18px;
+        letter-spacing: 0.08em;
+        color: var(--text);
+      }
+      .pkt-counter {
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        color: var(--sub);
+        background: var(--srf);
+        border: 1px solid var(--bdr2);
+        border-radius: 8px;
+        padding: 4px 10px;
+      }
+
+      #feed {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+        gap: 10px;
+        align-content: start;
+      }
+
+      .empty-feed {
+        grid-column: 1/-1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 60px 20px;
+        opacity: 0.25;
+      }
+      .empty-icon {
+        font-size: 40px;
+      }
+      .empty-txt {
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        color: var(--sub);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        text-align: center;
+      }
+
+      /* PACKET CARD */
+      .pkt {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid var(--bdr2);
+        cursor: pointer;
+        transition:
+          border-color 0.2s,
+          transform 0.2s,
+          box-shadow 0.2s;
+        animation: pop 0.28s ease-out forwards;
+      }
+      .pkt:hover {
+        border-color: rgba(0, 245, 255, 0.4);
+        transform: translateY(-3px);
+        box-shadow:
+          0 8px 28px rgba(0, 0, 0, 0.5),
+          0 0 16px rgba(0, 245, 255, 0.08);
+      }
+      @keyframes pop {
         from {
           opacity: 0;
-          transform: translateY(10px);
+          transform: scale(0.88);
         }
         to {
           opacity: 1;
-          transform: translateY(0);
+          transform: scale(1);
         }
       }
-      .packet-entry {
-        animation: slideIn 0.3s ease-out forwards;
+      .pkt img {
+        width: 100%;
+        aspect-ratio: 1;
+        object-fit: cover;
+        display: block;
+      }
+      .pkt-overlay {
+        position: absolute;
+        inset: 0;
+        background: rgba(0, 30, 50, 0.8);
+        backdrop-filter: blur(2px);
+        opacity: 0;
+        transition: opacity 0.2s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+      }
+      .pkt:hover .pkt-overlay {
+        opacity: 1;
+      }
+      .pkt-icon {
+        color: var(--cyan);
+        font-size: 20px;
+      }
+      .pkt-label {
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        color: #fff;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .pkt-num {
+        position: absolute;
+        top: 5px;
+        left: 6px;
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        color: var(--sub);
+        background: rgba(7, 9, 15, 0.8);
+        border-radius: 4px;
+        padding: 2px 5px;
+      }
+
+      /* ── COMPOSE ── */
+      .compose {
+        flex-shrink: 0;
+        padding: 16px 20px;
+        border-top: 1px solid var(--bdr);
+        background: var(--srf);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .compose-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+
+      .cmp-input {
+        width: 100%;
+        background: var(--s2);
+        border: 1px solid var(--bdr2);
+        border-radius: 10px;
+        padding: 10px 14px;
+        color: var(--text);
+        font-family: "DM Sans", sans-serif;
+        font-size: 13px;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+      }
+      .cmp-input:focus {
+        border-color: var(--cyan);
+        box-shadow: 0 0 0 3px rgba(0, 245, 255, 0.08);
+      }
+
+      .carrier-btn {
+        width: 100%;
+        background: var(--s2);
+        border: 1px dashed var(--bdr2);
+        border-radius: 10px;
+        padding: 9px 14px;
+        color: var(--sub);
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 0.07em;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .carrier-btn:hover {
+        border-color: var(--cyan);
+        color: var(--text);
+      }
+
+      .cmp-textarea {
+        width: 100%;
+        background: var(--s2);
+        border: 1px solid var(--bdr2);
+        border-radius: 10px;
+        padding: 10px 14px;
+        color: var(--text);
+        font-family: "DM Sans", sans-serif;
+        font-size: 13px;
+        outline: none;
+        resize: none;
+        line-height: 1.6;
+        transition: border-color 0.2s;
+      }
+      .cmp-textarea:focus {
+        border-color: var(--cyan);
+      }
+
+      .send-btn {
+        width: 100%;
+        padding: 13px;
+        border: none;
+        border-radius: 11px;
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 17px;
+        letter-spacing: 0.14em;
+        background: linear-gradient(135deg, #00b0cc, #0055ee);
+        color: #fff;
+        cursor: pointer;
+        box-shadow: 0 4px 24px rgba(0, 245, 255, 0.2);
+        transition:
+          opacity 0.2s,
+          transform 0.15s,
+          box-shadow 0.2s;
+      }
+      .send-btn:hover {
+        opacity: 0.9;
+        box-shadow: 0 4px 40px rgba(0, 245, 255, 0.35);
+      }
+      .send-btn:active {
+        transform: scale(0.99);
+      }
+      .send-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      /* ── KERNEL ── */
+      .kernel-col {
+        display: flex;
+        flex-direction: column;
+        background: var(--srf);
+        min-height: 0;
+      }
+      .kernel-hd {
+        flex-shrink: 0;
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--bdr);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .kernel-title {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 18px;
+        letter-spacing: 0.1em;
+        color: var(--cyan);
+        text-shadow: 0 0 16px rgba(0, 245, 255, 0.3);
+      }
+      .kernel-clr {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        color: var(--sub);
+        background: none;
+        border: none;
+        cursor: pointer;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        transition: color 0.2s;
+      }
+      .kernel-clr:hover {
+        color: var(--text);
+      }
+
+      #stream {
+        flex: 1;
+        overflow-y: auto;
+        padding: 14px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .ke {
+        display: flex;
+        gap: 8px;
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        line-height: 1.5;
+      }
+      .kts {
+        color: var(--bdr2);
+        flex-shrink: 0;
+      }
+      .c-i {
+        color: var(--cyan);
+      }
+      .c-s {
+        color: var(--green);
+      }
+      .c-e {
+        color: var(--red);
+      }
+      .c-w {
+        color: var(--orange);
+      }
+
+      /* Decoded payload box */
+      .decoded-box {
+        background: rgba(48, 209, 88, 0.06);
+        border: 1px solid rgba(48, 209, 88, 0.25);
+        border-radius: 10px;
+        padding: 12px 14px;
+        margin: 4px 0;
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        color: #fff;
+        word-break: break-all;
+        line-height: 1.65;
+        animation: fadeUp 0.25s ease-out;
+      }
+      @keyframes fadeUp {
+        from {
+          opacity: 0;
+          transform: translateY(6px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .decoded-label {
+        font-size: 8px;
+        color: var(--green);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-bottom: 6px;
       }
     </style>
   </head>
-  <body class="bg-[#05070a] text-slate-200 min-h-screen">
-    <nav class="border-b border-white/5 bg-black/20 p-4 mb-6">
-      <div class="max-w-7xl mx-auto flex justify-between items-center">
-        <div class="flex items-center gap-4">
-          <a
-            href="/"
-            class="text-slate-500 hover:text-white transition-colors text-sm"
-            >← BACK_TO_HUB</a
-          >
-          <h1 class="text-xl font-bold tracking-tighter text-blue-500">
-            LIVE_STEGO_STREAM
-          </h1>
-        </div>
-        <div
-          class="flex items-center gap-2 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20"
-        >
-          <span class="relative flex h-2 w-2">
-            <span
-              class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
-            ></span>
-            <span
-              class="relative inline-flex rounded-full h-2 w-2 bg-green-500"
-            ></span>
-          </span>
-          <span class="text-[10px] text-green-500 font-bold uppercase"
-            >Socket_Active</span
-          >
-        </div>
+  <body>
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+
+    <nav>
+      <div class="nav-l">
+        <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Hub</a>
+        <span class="page-ttl">Live Stego Stream</span>
+      </div>
+      <div class="live-badge">
+        <div class="ring"><span></span><span></span></div>
+        <span class="live-lbl">Socket Active</span>
       </div>
     </nav>
 
-    <main
-      class="max-w-7xl mx-auto px-4 grid grid-cols-1 lg:grid-cols-3 gap-6 pb-8"
-    >
-      <div class="lg:col-span-2 space-y-6">
-        <div class="glass rounded-2xl p-6 glow-blue">
-          <div class="flex justify-between items-center mb-6">
-            <h2
-              class="text-xs font-bold text-slate-400 uppercase tracking-widest"
-            >
-              Intercepted_Packet_Feed
-            </h2>
-            <span
-              id="packetCount"
-              class="text-[10px] bg-white/5 px-2 py-1 rounded border border-white/10 text-slate-500"
-              >0 PACKETS</span
-            >
-          </div>
-          <div
-            id="packetFeed"
-            class="grid grid-cols-2 md:grid-cols-3 gap-4 h-[380px] overflow-y-auto pr-2 custom-scrollbar content-start"
-          >
-            <div
-              id="emptyFeed"
-              class="col-span-full h-full flex flex-col items-center justify-center text-slate-700 opacity-50 space-y-3"
-            >
-              <div class="text-4xl">📡</div>
-              <p class="text-xs">AWAITING_INCOMING_TRAFFIC...</p>
-            </div>
+    <div class="grid">
+      <!-- FEED + COMPOSE -->
+      <div class="feed-col">
+        <div class="feed-hd">
+          <span class="feed-hd-title">Intercepted Packet Feed</span>
+          <span id="pktCnt" class="pkt-counter">0 Packets</span>
+        </div>
+        <div id="feed">
+          <div class="empty-feed" id="emptyFeed">
+            <div class="empty-icon">📡</div>
+            <div class="empty-txt">Awaiting incoming traffic…</div>
           </div>
         </div>
-
-        <div class="glass rounded-2xl p-6 border-blue-500/20">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-            <div class="relative">
-              <input
-                id="customCarrier"
-                type="file"
-                accept="image/png, image/bmp"
-                class="hidden"
-                onchange="previewCarrier(this)"
-              />
-              <button
-                onclick="document.getElementById('customCarrier').click()"
-                class="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 text-[10px] font-bold text-slate-500 hover:border-blue-500/50 transition-all flex justify-between items-center uppercase tracking-tighter"
-              >
-                <span id="fileNameDisplay">Select_Carrier_Image</span>
-                <i class="fas fa-camera"></i>
-              </button>
-            </div>
+        <div class="compose">
+          <div class="compose-row">
+            <button
+              class="carrier-btn"
+              onclick="document.getElementById('carrierIn').click()"
+            >
+              <span id="carrierLbl">Select carrier image</span>
+              <i class="fas fa-image" style="font-size: 12px"></i>
+            </button>
             <input
-              id="passphrase"
+              class="cmp-input"
+              id="passIn"
               type="password"
-              placeholder="SET_AES_KEY"
-              class="bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus:border-blue-500/50 outline-none text-sm transition-all"
+              placeholder="AES-256 Key…"
             />
           </div>
-          <div class="relative mb-4">
-            <textarea
-              id="chatInput"
-              rows="2"
-              placeholder="ENTER_SECRET_PAYLOAD..."
-              class="w-full bg-black/40 border border-white/10 rounded-lg px-4 py-3 focus:border-blue-500/50 outline-none text-sm transition-all resize-none"
-            ></textarea>
-          </div>
-          <button
-            id="executeBtn"
-            onclick="sendSecret()"
-            class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-4 rounded-xl transition-all shadow-lg active:scale-[0.98] uppercase text-xs tracking-[0.2em]"
-          >
-            Execute_Protocol_Send
+          <textarea
+            class="cmp-textarea"
+            id="msgIn"
+            rows="2"
+            placeholder="Enter secret payload…"
+          ></textarea>
+          <button class="send-btn" id="sendBtn" onclick="sendSecret()">
+            <i class="fas fa-paper-plane" style="margin-right: 8px"></i>Execute
+            Protocol Send
           </button>
+          <input
+            id="carrierIn"
+            type="file"
+            accept="image/png,image/bmp"
+            style="display: none"
+            onchange="onCarrier(this)"
+          />
         </div>
       </div>
 
-      <div
-        class="bg-black/40 border border-white/5 rounded-2xl flex flex-col overflow-hidden h-full"
-      >
-        <div
-          class="bg-white/5 p-4 border-b border-white/5 flex justify-between items-center"
-        >
-          <h2
-            class="text-[10px] font-bold text-blue-400 uppercase tracking-[0.2em]"
-          >
-            Kernel_Stream_v2.1
-          </h2>
-          <button
-            onclick="clearStream()"
-            class="text-[10px] text-slate-600 hover:text-slate-400"
-          >
-            CLEAR
-          </button>
+      <!-- KERNEL STREAM -->
+      <div class="kernel-col">
+        <div class="kernel-hd">
+          <span class="kernel-title">Kernel Stream</span>
+          <button class="kernel-clr" onclick="clearStream()">Clear</button>
         </div>
-        <div
-          id="kernelStream"
-          class="flex-1 p-5 font-mono text-[11px] space-y-3 overflow-y-auto h-[550px] leading-relaxed custom-scrollbar"
-        >
-          <div class="text-slate-600 italic">-- System Online --</div>
+        <div id="stream">
+          <div class="ke">
+            <span class="kts">--:--:--</span
+            ><span class="c-i">System online.</span>
+          </div>
         </div>
       </div>
-    </main>
+    </div>
 
     <script>
       const socket = io();
-      let pCount = 0;
+      let n = 0;
 
-      socket.on("connect", () => {
-        addToKernel("Secure Tunnel Established.", "text-green-500");
-      });
+      socket.on("connect", () => klog("Secure tunnel established.", "s"));
 
-      function previewCarrier(input) {
-        const fileName = input.files[0]?.name || "Select_Carrier_Image";
-        document.getElementById("fileNameDisplay").innerText =
-          fileName.slice(0, 20) + (fileName.length > 20 ? "..." : "");
-        addToKernel(`[SYSTEM]: Carrier loaded: ${fileName}`, "text-blue-400");
+      function onCarrier(inp) {
+        const nm = inp.files[0]?.name || "Select carrier image";
+        document.getElementById("carrierLbl").textContent =
+          nm.length > 24 ? nm.slice(0, 21) + "…" : nm;
+        klog(`Carrier: ${nm}`, "i");
       }
 
       async function sendSecret() {
-        const msg = document.getElementById("chatInput").value;
-        const pass = document.getElementById("passphrase").value;
-        const fileInput = document.getElementById("customCarrier");
-        const btn = document.getElementById("executeBtn");
-
+        const msg = document.getElementById("msgIn").value.trim();
+        const pass = document.getElementById("passIn").value.trim();
+        const btn = document.getElementById("sendBtn");
         if (!msg || !pass) {
-          addToKernel("ERR: Payload and Key required.", "text-red-400");
+          klog("ERR: Payload and key required.", "e");
           return;
         }
 
         btn.disabled = true;
-        btn.innerText = "ENCODING...";
+        btn.innerHTML =
+          '<i class="fas fa-circle-notch fa-spin" style="margin-right:8px"></i>Encoding…';
 
-        let carrierB64 = null;
-        if (fileInput.files[0]) {
-          const reader = new FileReader();
-          carrierB64 = await new Promise((resolve) => {
-            reader.onload = (e) => resolve(e.target.result);
-            reader.readAsDataURL(fileInput.files[0]);
+        let b64 = null;
+        const fi = document.getElementById("carrierIn");
+        if (fi.files[0])
+          b64 = await new Promise((res) => {
+            const r = new FileReader();
+            r.onload = (e) => res(e.target.result);
+            r.readAsDataURL(fi.files[0]);
           });
-        }
 
-        addToKernel(
-          `[OUTBOUND]: Injecting AES payload into carrier...`,
-          "text-blue-400",
-        );
-        socket.emit("send_secure_msg", {
-          msg: msg,
-          password: pass,
-          carrier: carrierB64,
-        });
-
-        document.getElementById("chatInput").value = "";
+        klog("Injecting AES payload into carrier…", "i");
+        socket.emit("send_secure_msg", { msg, password: pass, carrier: b64 });
+        document.getElementById("msgIn").value = "";
         btn.disabled = false;
-        btn.innerText = "EXECUTE_PROTOCOL_SEND";
+        btn.innerHTML =
+          '<i class="fas fa-paper-plane" style="margin-right:8px"></i>Execute Protocol Send';
       }
 
-      // Triggered when SENDER successfully pushes a packet
-      socket.on("sent_confirmation", (data) => {
-        addToKernel(
-          "[SUCCESS]: Stego-packet tunneled to peer.",
-          "text-blue-500 font-bold",
-        );
-      });
+      socket.on("sent_confirmation", () =>
+        klog("Packet tunneled to peer.", "s"),
+      );
 
-      // Triggered for the RECEIVER when a packet arrives
       socket.on("new_stego_packet", (data) => {
-        const empty = document.getElementById("emptyFeed");
-        if (empty) empty.remove();
+        document.getElementById("emptyFeed")?.remove();
+        n++;
+        document.getElementById("pktCnt").textContent =
+          `${n} Packet${n !== 1 ? "s" : ""}`;
 
-        pCount++;
-        document.getElementById("packetCount").innerText = `${pCount} PACKETS`;
-
-        const feed = document.getElementById("packetFeed");
-        const container = document.createElement("div");
-        container.className =
-          "packet-entry relative group rounded-lg overflow-hidden border border-white/10 hover:border-blue-500/50 transition-all cursor-pointer";
-
-        // We added an onclick event to the overlay so you can click to decode manually
-        container.innerHTML = `
-        <img src="data:image/png;base64,${data.image}" class="w-full aspect-square object-cover">
-        <div onclick="manualDecode('${data.image}')" class="absolute inset-0 bg-blue-900/60 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center">
-            <i class="fas fa-unlock-alt mb-1 text-xs"></i>
-            <span class="text-[8px] font-bold bg-black px-2 py-1 rounded tracking-tighter uppercase">Click to Decode</span>
-        </div>
+        const feed = document.getElementById("feed");
+        const card = document.createElement("div");
+        card.className = "pkt";
+        card.innerHTML = `
+      <img src="data:image/png;base64,${data.image}" alt="pkt"/>
+      <div class="pkt-overlay" onclick="manualDecode('${data.image}')">
+        <div class="pkt-icon"><i class="fas fa-unlock-alt"></i></div>
+        <div class="pkt-label">Click to decode</div>
+      </div>
+      <div class="pkt-num">#${n}</div>
     `;
-        feed.prepend(container);
+        feed.prepend(card);
+        klog(`[INBOUND] Packet #${n} intercepted.`, "w");
 
-        addToKernel(
-          `[INBOUND]: Packet #${pCount} intercepted.`,
-          "text-yellow-500",
-        );
-
-        // Auto-attempt if key is already there
-        const pass = document.getElementById("passphrase").value;
-        if (pass) {
+        const pass = document.getElementById("passIn").value;
+        if (pass)
           socket.emit("decrypt_packet", { image: data.image, password: pass });
-        } else {
-          addToKernel(
-            "[NOTICE]: Enter AES key to reveal payload.",
-            "text-slate-500 italic",
-          );
-        }
+        else klog("Set AES key to auto-decode.", "i");
       });
 
-      // ADD THIS NEW FUNCTION BELOW THE socket.on BLOCK
-      function manualDecode(imageB64) {
-        const pass = document.getElementById("passphrase").value;
+      function manualDecode(b64) {
+        const pass = document.getElementById("passIn").value;
         if (!pass) {
-          addToKernel(
-            "ERR: Enter AES key in the terminal first.",
-            "text-red-400",
-          );
+          klog("ERR: Enter AES key first.", "e");
           return;
         }
-        addToKernel("[SYSTEM]: Retrying decryption with provided key...");
-        socket.emit("decrypt_packet", { image: imageB64, password: pass });
+        klog("Retrying decrypt…", "i");
+        socket.emit("decrypt_packet", { image: b64, password: pass });
       }
 
       socket.on("decrypted_result", (data) => {
-        const isError = data.msg.includes("failed");
-        const colorClass = isError
-          ? "text-red-400"
-          : "text-green-400 bg-green-500/5 px-2 py-1 rounded border border-green-500/10 block font-bold";
-        addToKernel(`[DECODED]: ${data.msg}`, colorClass);
+        const fail =
+          data.msg.toLowerCase().includes("fail") ||
+          data.msg.toLowerCase().includes("invalid");
+        if (fail) {
+          klog("Decryption failed — wrong key or corrupt packet.", "e");
+        } else {
+          const s = document.getElementById("stream");
+          const box = document.createElement("div");
+          box.className = "decoded-box";
+          box.innerHTML = `<div class="decoded-label">Decoded Payload</div>${escHtml(data.msg)}`;
+          s.appendChild(box);
+          s.scrollTop = s.scrollHeight;
+        }
       });
 
-      function addToKernel(text, color = "text-slate-400") {
-        const stream = document.getElementById("kernelStream");
-        const entry = document.createElement("div");
-        entry.className = color;
-        const timestamp = new Date().toLocaleTimeString("en-GB", {
-          hour12: false,
-        });
-        entry.innerHTML = `<span class="text-[9px] text-slate-700 mr-2">[${timestamp}]</span> > ${text}`;
-        stream.appendChild(entry);
-        stream.scrollTop = stream.scrollHeight;
+      socket.on("error", (d) => klog(`FATAL: ${d.message}`, "e"));
+
+      function escHtml(s) {
+        return s
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      function klog(msg, t = "i") {
+        const s = document.getElementById("stream");
+        const e = document.createElement("div");
+        e.className = "ke";
+        const ts = new Date().toLocaleTimeString("en-GB", { hour12: false });
+        e.innerHTML = `<span class="kts">${ts}</span><span class="c-${t}">${msg}</span>`;
+        s.appendChild(e);
+        s.scrollTop = s.scrollHeight;
       }
 
       function clearStream() {
-        document.getElementById("kernelStream").innerHTML =
-          '<div class="text-slate-600 italic">-- Stream Purged --</div>';
+        document.getElementById("stream").innerHTML = "";
+        klog("Stream cleared.");
       }
 
-      socket.on("error", (data) => {
-        addToKernel(`[FATAL_ERR]: ${data.message}`, "text-red-500");
-        document.getElementById("executeBtn").innerText =
-          "EXECUTE_PROTOCOL_SEND";
-        document.getElementById("executeBtn").disabled = false;
+      document.getElementById("msgIn").addEventListener("keydown", (e) => {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          sendSecret();
+        }
       });
     </script>
   </body>

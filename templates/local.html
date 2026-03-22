@@ -3,618 +3,1562 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>StegoToolkit | Secure Data Embedding</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>StegoToolkit | Local</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=JetBrains+Mono&display=swap");
+      :root {
+        --bg: #07090f;
+        --surface: #0d1117;
+        --s2: #111827;
+        --border: #1c2333;
+        --border2: #253045;
+        --cyan: #00f5ff;
+        --violet: #bf5af2;
+        --green: #30d158;
+        --orange: #ff9f0a;
+        --red: #ff453a;
+        --text: #e8edf5;
+        --sub: #6b7c93;
+        --faint: #1a2332;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html {
+        scroll-behavior: smooth;
+      }
+
+      /* FIX 1: .hidden must be defined */
+      .hidden {
+        display: none !important;
+      }
+
       body {
-        font-family: "Plus Jakarta Sans", sans-serif;
-        background-color: #0b0f1a;
-        color: #e2e8f0;
+        font-family: "DM Sans", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        min-height: 100vh;
       }
-      .mono {
-        font-family: "JetBrains Mono", monospace;
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        z-index: 0;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 3px,
+          rgba(0, 0, 0, 0.06) 3px,
+          rgba(0, 0, 0, 0.06) 4px
+        );
       }
-      .glass-panel {
-        background: rgba(17, 24, 39, 0.7);
-        backdrop-filter: blur(16px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
+
+      ::-webkit-scrollbar {
+        width: 4px;
       }
-      .tab-active {
-        border-bottom: 2px solid #3b82f6;
-        color: #3b82f6;
+      ::-webkit-scrollbar-track {
+        background: transparent;
       }
-      /* Capacity Bar Styles */
-      .capacity-bar {
-        height: 4px;
-        background: #1e293b;
-        border-radius: 2px;
+      ::-webkit-scrollbar-thumb {
+        background: var(--border2);
+        border-radius: 4px;
+      }
+
+      /* ── NAV ── */
+      nav {
+        position: sticky;
+        top: 0;
+        z-index: 40;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 40px;
+        background: rgba(7, 9, 15, 0.92);
+        backdrop-filter: blur(24px);
+        border-bottom: 1px solid var(--border);
+      }
+      .logo {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        text-decoration: none;
+      }
+      .logo-box {
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        background: linear-gradient(135deg, var(--cyan), var(--violet));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        color: #000;
+        box-shadow: 0 0 16px rgba(0, 245, 255, 0.2);
+      }
+      .logo-name {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 22px;
+        letter-spacing: 0.06em;
+        color: #fff;
+      }
+      .logo-name em {
+        color: var(--cyan);
+        font-style: normal;
+      }
+      .nav-badge {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        color: var(--sub);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      /* ── LAYOUT ── */
+      .layout {
+        position: relative;
+        z-index: 1;
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 28px 40px;
+        display: grid;
+        grid-template-columns: 1fr 300px;
+        gap: 20px;
+        align-items: start;
+      }
+
+      /* ── TAB BAR ── */
+      .tab-bar {
+        display: flex;
+        gap: 3px;
+        margin-bottom: 20px;
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 5px;
+        overflow-x: auto;
+      }
+      .tab-btn {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 10px 18px;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--sub);
+        font-family: "DM Sans", sans-serif;
+        font-size: 13px;
+        font-weight: 500;
+        cursor: pointer;
+        white-space: nowrap;
+        transition: all 0.2s;
+        letter-spacing: 0.01em;
+      }
+      .tab-btn:hover {
+        color: var(--text);
+        background: var(--faint);
+      }
+      .tab-btn.active {
+        background: var(--faint);
+        color: #fff;
+        border-color: var(--border2);
+      }
+      .tab-btn.active .tdot {
+        opacity: 1;
+        transform: scale(1);
+      }
+      .tdot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        opacity: 0;
+        transform: scale(0.5);
+        transition: all 0.2s;
+        flex-shrink: 0;
+      }
+
+      /* ── PANEL ── */
+      .panel {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
         overflow: hidden;
       }
-      .capacity-fill {
+      .panel-header {
+        padding: 22px 28px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .ph-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 17px;
+        flex-shrink: 0;
+      }
+      .ph-title {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 22px;
+        letter-spacing: 0.06em;
+        color: #fff;
+      }
+      .ph-sub {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        color: var(--sub);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin-top: 2px;
+      }
+
+      /* FIX 2: panel-body is plain padding only — forms handle their own layout */
+      .panel-body {
+        padding: 28px;
+      }
+
+      /* FIX 3: form stack — all forms use this for consistent vertical spacing */
+      .form-stack {
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+      }
+
+      /* ── FIELDS ── */
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .field-label {
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        letter-spacing: 0.18em;
+        color: var(--sub);
+        text-transform: uppercase;
+      }
+
+      input[type="password"],
+      textarea,
+      select {
+        width: 100%;
+        background: var(--s2);
+        border: 1px solid var(--border2);
+        border-radius: 11px;
+        padding: 12px 16px;
+        color: var(--text);
+        font-family: "DM Sans", sans-serif;
+        font-size: 14px;
+        font-weight: 400;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        -webkit-appearance: none;
+      }
+      input[type="password"]:focus,
+      textarea:focus,
+      select:focus {
+        border-color: var(--cyan);
+        box-shadow: 0 0 0 3px rgba(0, 245, 255, 0.1);
+      }
+      input[type="file"] {
+        width: 100%;
+        background: var(--s2);
+        border: 1px dashed var(--border2);
+        border-radius: 11px;
+        padding: 22px 16px;
+        color: var(--sub);
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.05em;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+      }
+      input[type="file"]:hover {
+        border-color: var(--cyan);
+        color: var(--text);
+      }
+      textarea {
+        resize: none;
+        line-height: 1.6;
+      }
+      select option {
+        background: var(--s2);
+      }
+
+      /* ── TOGGLE BUTTONS ── */
+      .tgl-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+      }
+      .tgl-btn {
+        padding: 11px;
+        border-radius: 11px;
+        border: 1px solid var(--border2);
+        background: transparent;
+        color: var(--sub);
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        font-weight: 500;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-transform: uppercase;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 7px;
+      }
+      .tgl-btn:hover {
+        color: var(--text);
+        border-color: var(--border);
+      }
+      .tgl-btn.a-cyan {
+        border-color: var(--cyan);
+        background: rgba(0, 245, 255, 0.08);
+        color: var(--cyan);
+      }
+      .tgl-btn.a-green {
+        border-color: var(--green);
+        background: rgba(48, 209, 88, 0.08);
+        color: var(--green);
+      }
+
+      /* ── BIT DEPTH ── */
+      .depth-row {
+        display: flex;
+        gap: 8px;
+      }
+      .depth-btn {
+        flex: 1;
+        padding: 10px 8px;
+        border-radius: 11px;
+        border: 1px solid var(--border2);
+        background: transparent;
+        color: var(--sub);
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-align: center;
+        line-height: 1.5;
+      }
+      .depth-btn:hover {
+        color: var(--text);
+        border-color: var(--border);
+      }
+      .depth-btn.active {
+        border-color: var(--cyan);
+        background: rgba(0, 245, 255, 0.08);
+        color: var(--cyan);
+      }
+      .depth-sub {
+        font-size: 9px;
+        opacity: 0.5;
+        display: block;
+        margin-top: 1px;
+      }
+
+      /* ── CAPACITY BAR ── */
+      /* FIX 4: cap-wrap needs its own flex column */
+      .cap-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .cap-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .cap-label {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        color: var(--sub);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+      .cap-val {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        color: var(--cyan);
+      }
+      .cap-track {
+        height: 3px;
+        background: var(--faint);
+        border-radius: 3px;
+        overflow: hidden;
+      }
+      .cap-fill {
         height: 100%;
         width: 0%;
         transition:
-          width 0.5s ease,
+          width 0.4s,
           background 0.3s;
+        border-radius: 3px;
+        background: var(--cyan);
+      }
+
+      /* ── SUBMIT BUTTON ── */
+      .sub-btn {
+        width: 100%;
+        padding: 15px;
+        border: none;
+        border-radius: 13px;
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 17px;
+        letter-spacing: 0.12em;
+        cursor: pointer;
+        transition:
+          opacity 0.2s,
+          transform 0.15s,
+          box-shadow 0.2s;
+      }
+      .sub-btn:hover {
+        opacity: 0.88;
+      }
+      .sub-btn:active {
+        transform: scale(0.99);
+      }
+      .sub-btn:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+      .btn-cyan {
+        background: linear-gradient(135deg, #00b8cc, #0066ff);
+        color: #fff;
+        box-shadow: 0 4px 24px rgba(0, 245, 255, 0.2);
+      }
+      .btn-violet {
+        background: linear-gradient(135deg, #7c1fe0, #bf5af2);
+        color: #fff;
+        box-shadow: 0 4px 24px rgba(191, 90, 242, 0.2);
+      }
+      .btn-red {
+        background: linear-gradient(135deg, #b91c1c, #ff453a);
+        color: #fff;
+        box-shadow: 0 4px 24px rgba(255, 69, 58, 0.2);
+      }
+      .btn-orange {
+        background: linear-gradient(135deg, #b25400, #ff9f0a);
+        color: #fff;
+        box-shadow: 0 4px 24px rgba(255, 159, 10, 0.2);
+      }
+      .btn-cyan:hover {
+        box-shadow: 0 4px 40px rgba(0, 245, 255, 0.4);
+      }
+      .btn-violet:hover {
+        box-shadow: 0 4px 40px rgba(191, 90, 242, 0.4);
+      }
+      .btn-red:hover {
+        box-shadow: 0 4px 40px rgba(255, 69, 58, 0.4);
+      }
+      .btn-orange:hover {
+        box-shadow: 0 4px 40px rgba(255, 159, 10, 0.4);
+      }
+
+      /* ── DETECT OUTPUT ── */
+      .threat-block {
+        background: var(--s2);
+        border: 1px solid var(--border2);
+        border-radius: 14px;
+        padding: 22px;
+        margin-top: 20px;
+      }
+      .threat-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 12px;
+      }
+      .threat-lbl {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        color: var(--sub);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+      }
+      .threat-val {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 32px;
+        letter-spacing: 0.04em;
+        line-height: 1;
+      }
+      .threat-track {
+        height: 4px;
+        background: var(--faint);
+        border-radius: 4px;
+        overflow: hidden;
+      }
+      .threat-fill {
+        height: 100%;
+        transition:
+          width 1.2s ease,
+          background 0.3s;
+        border-radius: 4px;
+      }
+      .threat-msg {
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        color: var(--sub);
+        line-height: 1.7;
+        margin-top: 12px;
+      }
+
+      /* ── DIFF STATS ── */
+      .stat-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr 1fr;
+        gap: 10px;
+      }
+      .stat-box {
+        background: var(--s2);
+        border: 1px solid var(--border2);
+        border-radius: 12px;
+        padding: 16px 12px;
+        text-align: center;
+      }
+      .stat-n {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 28px;
+        letter-spacing: 0.04em;
+        color: var(--violet);
+        line-height: 1;
+      }
+      .stat-l {
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        color: var(--sub);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        margin-top: 4px;
+      }
+
+      /* ── IMAGE PREVIEW ── */
+      .img-block {
+        border: 1px solid var(--border2);
+        border-radius: 12px;
+        overflow: hidden;
+        margin-top: 16px;
+      }
+      .img-hd {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        color: var(--sub);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        padding: 9px 14px;
+        border-bottom: 1px solid var(--border2);
+        background: var(--s2);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      /* ── RESULT BOX ── */
+      .result-block {
+        background: rgba(0, 245, 255, 0.04);
+        border: 1px solid rgba(0, 245, 255, 0.2);
+        border-radius: 12px;
+        padding: 16px;
+        margin-top: 16px;
+      }
+      .result-hd {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        color: var(--cyan);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .result-txt {
+        font-family: "DM Mono", monospace;
+        font-size: 12px;
+        color: #fff;
+        word-break: break-all;
+        line-height: 1.65;
+      }
+      .copy-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--cyan);
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        letter-spacing: 0.1em;
+        transition: opacity 0.2s;
+        padding: 0;
+        text-transform: uppercase;
+      }
+      .copy-btn:hover {
+        opacity: 0.6;
+      }
+
+      /* ── SIDEBAR ── */
+      .sidebar {
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        overflow: hidden;
+        position: sticky;
+        top: 72px;
+      }
+      .sb-header {
+        padding: 15px 20px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .sb-title {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 16px;
+        letter-spacing: 0.1em;
+        color: var(--cyan);
+      }
+      .sb-clr {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        color: var(--sub);
+        background: none;
+        border: none;
+        cursor: pointer;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        transition: color 0.2s;
+      }
+      .sb-clr:hover {
+        color: var(--text);
+      }
+      #console {
+        height: 380px;
+        overflow-y: auto;
+        padding: 14px 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+      }
+      .log-e {
+        display: flex;
+        gap: 8px;
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        line-height: 1.5;
+      }
+      .log-ts {
+        color: var(--border2);
+        flex-shrink: 0;
+      }
+      .c-i {
+        color: var(--cyan);
+      }
+      .c-s {
+        color: var(--green);
+      }
+      .c-e {
+        color: var(--red);
+      }
+
+      /* ── TOAST ── */
+      #toast {
+        position: fixed;
+        bottom: 28px;
+        right: 28px;
+        z-index: 9999;
+        max-width: 360px;
+        border-radius: 14px;
+        padding: 14px 20px;
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.04em;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        opacity: 0;
+        transform: translateY(12px);
+        transition: all 0.3s ease;
+        pointer-events: none;
+      }
+      #toast.show {
+        opacity: 1;
+        transform: translateY(0);
+      }
+      .t-error {
+        background: #1c0810;
+        border: 1px solid var(--red);
+        color: #ff9f9f;
+      }
+      .t-success {
+        background: #031a0e;
+        border: 1px solid var(--green);
+        color: #7ee8a2;
+      }
+      .t-info {
+        background: #001a20;
+        border: 1px solid var(--cyan);
+        color: #7dd3fc;
       }
     </style>
   </head>
-  <body class="min-h-screen">
-    <nav class="border-b border-white/5 bg-black/20 sticky top-0 z-50">
-      <div
-        class="container mx-auto px-6 py-4 flex justify-between items-center"
-      >
-        <div class="flex items-center space-x-3">
-          <div
-            class="bg-gradient-to-tr from-blue-600 to-indigo-600 p-2 rounded-xl shadow-lg"
-          >
-            <i class="fas fa-user-secret text-white text-xl"></i>
-          </div>
-          <h1 class="text-xl font-bold tracking-tighter uppercase">
-            Stego<span class="text-blue-500">Toolkit</span>
-          </h1>
-        </div>
-        <div
-          class="hidden md:block text-[10px] font-bold uppercase tracking-widest opacity-50 font-mono"
-        >
-          v2.1.0 // Heuristic_Ready
-        </div>
-      </div>
+  <body>
+    <div id="toast"></div>
+
+    <nav>
+      <a href="/" class="logo">
+        <div class="logo-box"><i class="fas fa-user-secret"></i></div>
+        <span class="logo-name">Stego<em>Toolkit</em></span>
+      </a>
+      <span class="nav-badge">v2.2.0 · HMAC Active</span>
     </nav>
 
-    <main class="container mx-auto px-6 py-8 max-w-6xl">
-      <div
-        class="flex space-x-8 mb-8 border-b border-white/5 text-sm font-semibold text-slate-500 overflow-x-auto"
-      >
-        <button
-          onclick="switchTab('single')"
-          id="tab-single"
-          class="pb-4 tab-active whitespace-nowrap"
-        >
-          Single Image
-        </button>
-        <button
-          onclick="switchTab('batch')"
-          id="tab-batch"
-          class="pb-4 hover:text-slate-300 whitespace-nowrap text-indigo-400"
-        >
-          Batch Processing
-        </button>
-        <button
-          onclick="switchTab('pdf')"
-          id="tab-pdf"
-          class="pb-4 hover:text-slate-300 whitespace-nowrap text-blue-400"
-        >
-          PDF Metadata
-        </button>
-        <button
-          onclick="switchTab('detect')"
-          id="tab-detect"
-          class="pb-4 hover:text-slate-300 whitespace-nowrap text-red-400"
-        >
-          Anomaly Detection
-        </button>
-      </div>
-
-      <div class="grid lg:grid-cols-3 gap-8">
-        <div class="lg:col-span-2 space-y-6">
-          <section
-            id="section-single"
-            class="glass-panel rounded-2xl p-8 shadow-2xl"
+    <div class="layout">
+      <!-- MAIN COLUMN -->
+      <div>
+        <!-- TAB BAR -->
+        <div class="tab-bar">
+          <button
+            class="tab-btn active"
+            onclick="switchTab('single')"
+            id="tab-single"
           >
-            <h2 class="text-lg font-bold mb-6 flex items-center">
-              <i class="fas fa-image mr-3 text-blue-500"></i>Image Steganography
-            </h2>
-            <form id="imageForm" class="space-y-4">
-              <input type="hidden" name="mode" value="hide" id="imgModeInput" />
-              <div class="grid grid-cols-2 gap-4 mb-4">
-                <button
-                  type="button"
-                  onclick="setImgMode('hide')"
-                  id="btn-m-hide"
-                  class="py-2 rounded-lg border border-blue-500 bg-blue-500/20 text-xs font-bold text-blue-400"
-                >
-                  ENCODE
-                </button>
-                <button
-                  type="button"
-                  onclick="setImgMode('extract')"
-                  id="btn-m-extract"
-                  class="py-2 rounded-lg border border-white/10 bg-white/5 text-xs font-bold"
-                >
-                  DECODE
-                </button>
+            <div class="tdot" style="background: var(--cyan)"></div>
+            <i class="fas fa-image" style="font-size: 12px"></i> Single Image
+          </button>
+          <button class="tab-btn" onclick="switchTab('batch')" id="tab-batch">
+            <div class="tdot" style="background: var(--violet)"></div>
+            <i class="fas fa-layer-group" style="font-size: 12px"></i> Batch
+          </button>
+          <button class="tab-btn" onclick="switchTab('pdf')" id="tab-pdf">
+            <div class="tdot" style="background: var(--red)"></div>
+            <i class="fas fa-file-pdf" style="font-size: 12px"></i> PDF Vault
+          </button>
+          <button class="tab-btn" onclick="switchTab('detect')" id="tab-detect">
+            <div class="tdot" style="background: var(--orange)"></div>
+            <i class="fas fa-search-radiation" style="font-size: 12px"></i>
+            Anomaly Scan
+          </button>
+          <button class="tab-btn" onclick="switchTab('diff')" id="tab-diff">
+            <div class="tdot" style="background: #c084fc"></div>
+            <i class="fas fa-not-equal" style="font-size: 12px"></i> Visual Diff
+          </button>
+        </div>
+
+        <!-- ══ SINGLE IMAGE ══ -->
+        <div id="section-single" class="panel">
+          <div class="panel-header">
+            <div
+              class="ph-icon"
+              style="
+                background: rgba(0, 245, 255, 0.1);
+                color: var(--cyan);
+                box-shadow: 0 0 16px rgba(0, 245, 255, 0.15);
+              "
+            >
+              <i class="fas fa-image"></i>
+            </div>
+            <div>
+              <div class="ph-title">Image Steganography</div>
+              <div class="ph-sub">LSB · AES-256-CBC · HMAC-SHA256</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <!-- FIX: hidden inputs are outside the form-stack; submit btn is INSIDE the form -->
+            <form id="imageForm" class="form-stack">
+              <input type="hidden" name="mode" id="imgMode" value="hide" />
+              <input type="hidden" name="bit_depth" id="depthVal" value="1" />
+
+              <div class="field">
+                <div class="field-label">Operation Mode</div>
+                <div class="tgl-group">
+                  <button
+                    type="button"
+                    onclick="setMode('hide')"
+                    id="btn-hide"
+                    class="tgl-btn a-cyan"
+                  >
+                    <i class="fas fa-arrow-up"></i> Encode
+                  </button>
+                  <button
+                    type="button"
+                    onclick="setMode('extract')"
+                    id="btn-extract"
+                    class="tgl-btn"
+                  >
+                    <i class="fas fa-arrow-down"></i> Decode
+                  </button>
+                </div>
               </div>
-              <div class="space-y-2">
+
+              <div class="field">
+                <div class="field-label">Carrier Image (PNG / BMP)</div>
                 <input
                   type="file"
-                  id="singleFileInput"
+                  id="imgFile"
                   name="file"
-                  accept="image/png, image/bmp"
-                  class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm"
+                  accept="image/png,image/bmp"
                   required
                 />
-                <div id="capacityContainer" class="hidden space-y-1 px-1">
-                  <div
-                    class="flex justify-between text-[10px] font-bold uppercase"
-                  >
-                    <span class="text-slate-500">Storage Capacity</span>
-                    <span id="capacityText" class="text-blue-400"
-                      >0 / 0 Bytes</span
-                    >
+                <!-- Capacity bar: hidden until file loaded -->
+                <div id="capWrap" class="cap-wrap hidden">
+                  <div class="cap-row">
+                    <span class="cap-label">Capacity</span>
+                    <span id="capTxt" class="cap-val">0 / 0 B</span>
                   </div>
-                  <div class="capacity-bar">
-                    <div
-                      id="capacityFill"
-                      class="capacity-fill bg-blue-500"
-                    ></div>
+                  <div class="cap-track">
+                    <div id="capFill" class="cap-fill"></div>
                   </div>
                 </div>
               </div>
-              <input
-                type="password"
-                name="password"
-                placeholder="Passphrase"
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm focus:border-blue-500 outline-none"
-                required
-              />
-              <textarea
-                name="text"
-                id="imgText"
-                rows="4"
-                placeholder="Payload string..."
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm focus:border-blue-500 outline-none"
-              ></textarea>
-              <button
-                type="submit"
-                class="w-full bg-blue-600 hover:bg-blue-500 py-4 rounded-xl font-bold transition-all shadow-lg active:scale-95"
-              >
-                EXECUTE PROTOCOL
+
+              <div id="depthGroup" class="field">
+                <div class="field-label">LSB Bit Depth</div>
+                <div class="depth-row">
+                  <button
+                    type="button"
+                    class="depth-btn active"
+                    onclick="setDepth(1, this)"
+                  >
+                    1-bit<span class="depth-sub">Subtle</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="depth-btn"
+                    onclick="setDepth(2, this)"
+                  >
+                    2-bit<span class="depth-sub">Balanced</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="depth-btn"
+                    onclick="setDepth(3, this)"
+                  >
+                    3-bit<span class="depth-sub">High Cap</span>
+                  </button>
+                </div>
+              </div>
+
+              <div class="field">
+                <div class="field-label">Passphrase</div>
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="Enter AES-256 passphrase…"
+                  required
+                />
+              </div>
+
+              <div id="payloadField" class="field">
+                <div class="field-label">Payload</div>
+                <textarea
+                  name="text"
+                  id="payloadText"
+                  rows="4"
+                  placeholder="Secret message to encode…"
+                ></textarea>
+              </div>
+
+              <!-- FIX: submit is the ONLY submit-type button in this form -->
+              <button type="submit" class="sub-btn btn-cyan">
+                Execute Protocol
               </button>
             </form>
-          </section>
+          </div>
+        </div>
 
-          <section
-            id="section-batch"
-            class="glass-panel rounded-2xl p-8 shadow-2xl hidden"
-          >
-            <h2 class="text-lg font-bold mb-6 flex items-center">
-              <i class="fas fa-layer-group mr-3 text-indigo-500"></i>Batch
-              Encryption Pipeline
-            </h2>
-            <form id="batchForm" class="space-y-4">
-              <input
-                type="file"
-                name="files"
-                accept="image/png, image/bmp"
-                multiple
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm"
-                required
-              />
-              <input
-                type="password"
-                name="password"
-                placeholder="Passphrase"
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm outline-none"
-                required
-              />
-              <textarea
-                name="text"
-                rows="4"
-                placeholder="Universal Payload..."
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm outline-none"
-                required
-              ></textarea>
-              <button
-                type="submit"
-                class="w-full bg-indigo-600 hover:bg-indigo-500 py-4 rounded-xl font-bold shadow-lg"
-              >
-                START BATCH ENCODING
-              </button>
-            </form>
-          </section>
-
-          <section
-            id="section-pdf"
-            class="glass-panel rounded-2xl p-8 shadow-2xl hidden"
-          >
-            <h2 class="text-lg font-bold mb-6 flex items-center">
-              <i class="fas fa-file-pdf mr-3 text-red-500"></i>PDF Metadata
-              Vault
-            </h2>
-            <form id="pdfForm" class="space-y-4">
-              <select
-                name="mode"
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm outline-none"
-              >
-                <option value="hide">Inject Secret</option>
-                <option value="extract">Extract Secret</option>
-              </select>
-              <input
-                type="file"
-                name="file"
-                accept="application/pdf"
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm"
-                required
-              />
-              <input
-                type="password"
-                name="password"
-                placeholder="Passphrase"
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm outline-none"
-                required
-              />
-              <textarea
-                name="text"
-                rows="4"
-                placeholder="Payload..."
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm outline-none"
-              ></textarea>
-              <button
-                type="submit"
-                class="w-full bg-red-600 hover:bg-red-500 py-4 rounded-xl font-bold shadow-lg"
-              >
-                PROCESS DOCUMENT
-              </button>
-            </form>
-          </section>
-
-          <section
-            id="section-detect"
-            class="glass-panel rounded-2xl p-8 shadow-2xl hidden"
-          >
-            <h2 class="text-lg font-bold mb-6 flex items-center text-red-500">
-              <i class="fas fa-search-radiation mr-3"></i>Anomaly Scanner
-            </h2>
-            <form id="detectForm" class="space-y-4">
-              <input
-                type="file"
-                name="file"
-                accept="image/png, image/bmp"
-                class="w-full bg-slate-900 border border-white/10 rounded-xl p-3 text-sm"
-                required
-              />
-              <button
-                type="submit"
-                class="w-full bg-red-600 hover:bg-red-500 py-4 rounded-xl font-bold transition-all shadow-lg"
-              >
-                SCAN FOR HIDDEN PAYLOAD
-              </button>
-            </form>
-
+        <!-- ══ BATCH ══ -->
+        <div id="section-batch" class="panel hidden">
+          <div class="panel-header">
             <div
-              id="detectOutput"
-              class="mt-6 hidden p-6 rounded-xl border border-white/10 bg-black/20"
+              class="ph-icon"
+              style="
+                background: rgba(191, 90, 242, 0.1);
+                color: var(--violet);
+                box-shadow: 0 0 16px rgba(191, 90, 242, 0.15);
+              "
             >
-              <div class="flex justify-between items-end mb-2">
-                <span class="text-xs font-bold uppercase text-slate-500"
-                  >Threat Level</span
-                >
-                <span
-                  id="threatStatus"
-                  class="text-xl font-black uppercase tracking-tighter"
-                  >UNKNOWN</span
-                >
+              <i class="fas fa-layer-group"></i>
+            </div>
+            <div>
+              <div class="ph-title">Batch Pipeline</div>
+              <div class="ph-sub">
+                Encode the same payload into multiple images
               </div>
-              <div
-                class="h-2 w-full bg-slate-800 rounded-full overflow-hidden mb-4"
-              >
-                <div
-                  id="threatBar"
-                  class="h-full transition-all duration-1000"
-                  style="width: 0%"
-                ></div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <form id="batchForm" class="form-stack">
+              <div class="field">
+                <div class="field-label">Images (PNG / BMP)</div>
+                <input
+                  type="file"
+                  name="files"
+                  accept="image/png,image/bmp"
+                  multiple
+                  required
+                />
               </div>
-              <p
-                id="threatMsg"
-                class="text-sm text-slate-300 italic font-mono text-[11px] mb-4"
-              ></p>
-              <div
-                id="heatmapContainer"
-                class="hidden border border-white/10 rounded-lg overflow-hidden"
-              >
-                <label
-                  class="block text-[10px] font-bold bg-white/5 p-2 uppercase text-slate-500 border-b border-white/10"
-                  >Entropy Spatial Heatmap</label
+              <div class="field">
+                <div class="field-label">Passphrase</div>
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="AES-256 passphrase…"
+                  required
+                />
+              </div>
+              <div class="field">
+                <div class="field-label">Universal Payload</div>
+                <textarea
+                  name="text"
+                  rows="4"
+                  placeholder="Message to embed in every image…"
+                ></textarea>
+              </div>
+              <input type="hidden" name="bit_depth" value="1" />
+              <button type="submit" class="sub-btn btn-violet">
+                Start Batch Encoding
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- ══ PDF ══ -->
+        <div id="section-pdf" class="panel hidden">
+          <div class="panel-header">
+            <div
+              class="ph-icon"
+              style="
+                background: rgba(255, 69, 58, 0.1);
+                color: var(--red);
+                box-shadow: 0 0 16px rgba(255, 69, 58, 0.12);
+              "
+            >
+              <i class="fas fa-file-pdf"></i>
+            </div>
+            <div>
+              <div class="ph-title">PDF Metadata Vault</div>
+              <div class="ph-sub">Inject secrets into PDF metadata fields</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <form id="pdfForm" class="form-stack">
+              <div class="field">
+                <div class="field-label">Operation</div>
+                <select
+                  name="mode"
+                  id="pdfMode"
+                  onchange="togglePdfPayload(this)"
                 >
+                  <option value="hide">Inject Secret</option>
+                  <option value="extract">Extract Secret</option>
+                </select>
+              </div>
+              <div class="field">
+                <div class="field-label">PDF Document</div>
+                <input
+                  type="file"
+                  name="file"
+                  accept="application/pdf"
+                  required
+                />
+              </div>
+              <div class="field">
+                <div class="field-label">Passphrase</div>
+                <input
+                  type="password"
+                  name="password"
+                  placeholder="AES-256 passphrase…"
+                  required
+                />
+              </div>
+              <div id="pdfPayloadField" class="field">
+                <div class="field-label">Payload</div>
+                <textarea
+                  name="text"
+                  rows="4"
+                  placeholder="Secret to inject…"
+                ></textarea>
+              </div>
+              <button type="submit" class="sub-btn btn-red">
+                Process Document
+              </button>
+            </form>
+          </div>
+        </div>
+
+        <!-- ══ ANOMALY DETECT ══ -->
+        <div id="section-detect" class="panel hidden">
+          <div class="panel-header">
+            <div
+              class="ph-icon"
+              style="
+                background: rgba(255, 159, 10, 0.1);
+                color: var(--orange);
+                box-shadow: 0 0 16px rgba(255, 159, 10, 0.12);
+              "
+            >
+              <i class="fas fa-search-radiation"></i>
+            </div>
+            <div>
+              <div class="ph-title">Anomaly Scanner</div>
+              <div class="ph-sub">ML + Heuristic LSB forensic analysis</div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <form id="detectForm" class="form-stack">
+              <div class="field">
+                <div class="field-label">Target Image</div>
+                <input
+                  type="file"
+                  name="file"
+                  accept="image/png,image/bmp"
+                  required
+                />
+              </div>
+              <button type="submit" class="sub-btn btn-red">
+                Scan for Hidden Payload
+              </button>
+            </form>
+
+            <!-- Output: outside the form, shown after response -->
+            <div id="detectOut" class="hidden">
+              <div class="threat-block">
+                <div class="threat-header">
+                  <div class="threat-lbl">Threat Assessment</div>
+                  <div id="threatVal" class="threat-val">—</div>
+                </div>
+                <div class="threat-track">
+                  <div
+                    id="threatFill"
+                    class="threat-fill"
+                    style="width: 0%"
+                  ></div>
+                </div>
+                <p id="threatMsg" class="threat-msg"></p>
+              </div>
+              <div id="heatmapWrap" class="img-block hidden">
+                <div class="img-hd"><span>LSB Entropy Heatmap</span></div>
                 <img
-                  id="heatmapImage"
+                  id="heatmapImg"
                   src=""
-                  class="w-full h-auto"
-                  alt="Anomaly Heatmap"
+                  style="width: 100%; display: block"
+                  alt="Heatmap"
                 />
               </div>
             </div>
-          </section>
+          </div>
         </div>
 
-        <div class="space-y-6">
-          <div class="glass-panel rounded-2xl p-6 h-[600px] flex flex-col">
-            <h3
-              class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4 italic"
-            >
-              Kernel_Stream
-            </h3>
+        <!-- ══ VISUAL DIFF ══ -->
+        <div id="section-diff" class="panel hidden">
+          <div class="panel-header">
             <div
-              id="console"
-              class="flex-grow mono text-[10px] text-blue-400 overflow-y-auto space-y-2 pr-2"
+              class="ph-icon"
+              style="
+                background: rgba(192, 132, 252, 0.1);
+                color: #c084fc;
+                box-shadow: 0 0 16px rgba(192, 132, 252, 0.12);
+              "
             >
-              <div class="text-slate-600">
-                [READY] StegoToolkit Analysis Suite Active
+              <i class="fas fa-not-equal"></i>
+            </div>
+            <div>
+              <div class="ph-title">Visual Diff Tool</div>
+              <div class="ph-sub">
+                Pixel-level comparison · ×20 amplification
               </div>
             </div>
-
-            <div
-              id="resultDisplay"
-              class="mt-4 p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl hidden relative group"
+          </div>
+          <div class="panel-body">
+            <p
+              style="
+                font-family: &quot;DM Mono&quot;, monospace;
+                font-size: 11px;
+                color: var(--sub);
+                line-height: 1.7;
+                margin-bottom: 20px;
+              "
             >
-              <div class="flex justify-between items-center mb-1">
-                <label class="text-[9px] uppercase font-bold text-blue-400"
-                  >Extracted Payload</label
-                >
-              </div>
+              Compare original vs stego image. LSB changes are amplified ×20 to
+              be visually detectable.
+            </p>
+            <form id="diffForm" class="form-stack">
               <div
-                id="resultText"
-                class="mono text-[11px] text-white break-all"
-              ></div>
+                style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px"
+              >
+                <div class="field">
+                  <div class="field-label">Original Image</div>
+                  <input
+                    type="file"
+                    name="original"
+                    accept="image/png,image/bmp"
+                    required
+                  />
+                </div>
+                <div class="field">
+                  <div class="field-label">Stego Image</div>
+                  <input
+                    type="file"
+                    name="stego"
+                    accept="image/png,image/bmp"
+                    required
+                  />
+                </div>
+              </div>
+              <button type="submit" class="sub-btn btn-orange">
+                Generate Diff
+              </button>
+            </form>
+
+            <div id="diffOut" class="hidden">
+              <div
+                class="stat-row"
+                style="margin-top: 20px; margin-bottom: 14px"
+              >
+                <div class="stat-box">
+                  <div id="dPx" class="stat-n">—</div>
+                  <div class="stat-l">Changed Px</div>
+                </div>
+                <div class="stat-box">
+                  <div id="dPct" class="stat-n">—</div>
+                  <div class="stat-l">% Modified</div>
+                </div>
+                <div class="stat-box">
+                  <div id="dMax" class="stat-n">—</div>
+                  <div class="stat-l">Max Δ</div>
+                </div>
+              </div>
+              <div class="img-block">
+                <div class="img-hd">
+                  <span>Amplified Diff Map (×20)</span>
+                  <a
+                    id="diffDL"
+                    href="#"
+                    download="diff.png"
+                    style="
+                      color: #c084fc;
+                      text-decoration: none;
+                      font-size: 10px;
+                    "
+                    >↓ Save</a
+                  >
+                </div>
+                <img
+                  id="diffImg"
+                  src=""
+                  style="width: 100%; display: block"
+                  alt="Diff"
+                />
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </main>
+      <!-- /main column -->
+
+      <!-- SIDEBAR -->
+      <div>
+        <div class="sidebar">
+          <div class="sb-header">
+            <span class="sb-title">Kernel Stream</span>
+            <button class="sb-clr" onclick="clearLog()">Clear</button>
+          </div>
+          <div id="console">
+            <div class="log-e">
+              <span class="log-ts">--:--:--</span>
+              <span class="c-i">StegoToolkit ready.</span>
+            </div>
+          </div>
+          <!-- Extracted payload shown here after decode -->
+          <div id="resultWrap" class="hidden" style="padding: 0 18px 18px">
+            <div class="result-block">
+              <div class="result-hd">
+                <span>Extracted Payload</span>
+                <button class="copy-btn" onclick="copyResult()">Copy</button>
+              </div>
+              <div id="resultTxt" class="result-txt"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- /layout -->
 
     <script>
-      let maxBytes = 0;
+      let maxB = 0,
+        curDepth = 1;
+      const ALL_TABS = ["single", "batch", "pdf", "detect", "diff"];
 
-      // Tab Switching Logic
+      /* ── TAB SWITCHING ─────────────────────────────────────── */
       function switchTab(tab) {
-        // Updated to remove 'text' as it was removed from your UI
-        ["single", "batch", "pdf", "detect"].forEach((t) => {
-          const section = document.getElementById(`section-${t}`);
-          const tabBtn = document.getElementById(`tab-${t}`);
-          if (section) section.classList.add("hidden");
-          if (tabBtn) tabBtn.classList.remove("tab-active");
+        ALL_TABS.forEach((t) => {
+          document.getElementById("section-" + t).classList.add("hidden");
+          document.getElementById("tab-" + t).classList.remove("active");
         });
-
-        const activeSection = document.getElementById(`section-${tab}`);
-        const activeTab = document.getElementById(`tab-${tab}`);
-        if (activeSection) activeSection.classList.remove("hidden");
-        if (activeTab) activeTab.classList.add("tab-active");
-
-        // Clear previous extraction results when switching tools
-        document.getElementById("resultDisplay").classList.add("hidden");
-        document.getElementById("resultText").innerText = "";
-
-        // Hide detection output if switching away from detection
-        if (tab !== "detect") {
-          document.getElementById("detectOutput").classList.add("hidden");
-        }
-
-        log(`Module sequence: ${tab.toUpperCase()} initialization...`);
+        document.getElementById("section-" + tab).classList.remove("hidden");
+        document.getElementById("tab-" + tab).classList.add("active");
+        // Reset transient output panels when navigating away
+        if (tab !== "detect")
+          document.getElementById("detectOut").classList.add("hidden");
+        if (tab !== "diff")
+          document.getElementById("diffOut").classList.add("hidden");
+        document.getElementById("resultWrap").classList.add("hidden");
+        log(tab.toUpperCase() + " module loaded.");
       }
 
-      // Sidebar Logging System
-      function log(msg, type = "info") {
-        const consoleEl = document.getElementById("console");
-        const entry = document.createElement("div");
-        const color =
-          type === "error"
-            ? "text-red-500"
-            : type === "success"
-              ? "text-green-400"
-              : "text-blue-400";
-        entry.innerHTML = `<span class="text-slate-700 font-mono">[${new Date().toLocaleTimeString()}]</span> <span class="${color}">${msg}</span>`;
-        consoleEl.prepend(entry);
+      /* ── LOGGING ───────────────────────────────────────────── */
+      function log(msg, t) {
+        t = t || "i";
+        const el = document.getElementById("console");
+        const e = document.createElement("div");
+        e.className = "log-e";
+        const ts = new Date().toLocaleTimeString("en-GB", { hour12: false });
+        e.innerHTML =
+          '<span class="log-ts">' +
+          ts +
+          '</span><span class="c-' +
+          t +
+          '">' +
+          msg +
+          "</span>";
+        el.appendChild(e);
+        el.scrollTop = el.scrollHeight;
+      }
+      function clearLog() {
+        document.getElementById("console").innerHTML = "";
+        log("Stream cleared.");
       }
 
-      // Copy to Clipboard Utility
-      function copyToClipboard() {
-        const text = document.getElementById("resultText").innerText;
-        if (!text) return;
-        navigator.clipboard.writeText(text).then(() => {
-          log("Output buffered to clipboard successfully.", "success");
-        });
+      /* ── TOAST ─────────────────────────────────────────────── */
+      var _tt;
+      function toast(msg, t) {
+        t = t || "info";
+        var el = document.getElementById("toast");
+        el.className = "t-" + t;
+        el.textContent = msg;
+        el.classList.add("show");
+        clearTimeout(_tt);
+        _tt = setTimeout(function () {
+          el.classList.remove("show");
+        }, 4200);
       }
 
-      // PDF Metadata Mode Toggle
-      function togglePdfInputs(select) {
-        const textarea = select.form.querySelector('textarea[name="text"]');
-        if (select.value === "extract") {
-          textarea.classList.add("hidden");
-          textarea.value = "";
-        } else {
-          textarea.classList.remove("hidden");
-        }
-      }
-
-      // Image Mode Toggle (Hide/Extract)
-      function setImgMode(mode) {
-        document.getElementById("imgModeInput").value = mode;
-        const isHide = mode === "hide";
-
-        document.getElementById("btn-m-hide").className = isHide
-          ? "py-2 rounded-lg border border-blue-500 bg-blue-500/20 text-xs font-bold text-blue-400"
-          : "py-2 rounded-lg border border-white/10 bg-white/5 text-xs font-bold";
-
-        document.getElementById("btn-m-extract").className = !isHide
-          ? "py-2 rounded-lg border border-blue-500 bg-blue-500/20 text-xs font-bold text-blue-400"
-          : "py-2 rounded-lg border border-white/10 bg-white/5 text-xs font-bold";
-
-        document.getElementById("imgText").classList.toggle("hidden", !isHide);
+      /* ── ENCODE / DECODE TOGGLE ────────────────────────────── */
+      function setMode(mode) {
+        document.getElementById("imgMode").value = mode;
+        var hide = mode === "hide";
+        document.getElementById("btn-hide").className = hide
+          ? "tgl-btn a-cyan"
+          : "tgl-btn";
+        document.getElementById("btn-extract").className = hide
+          ? "tgl-btn"
+          : "tgl-btn a-green";
+        // Payload textarea and bit-depth only relevant when encoding
         document
-          .getElementById("capacityContainer")
-          .classList.toggle("hidden", !isHide);
+          .getElementById("payloadField")
+          .classList.toggle("hidden", !hide);
+        document.getElementById("depthGroup").classList.toggle("hidden", !hide);
+        // Capacity bar only shown when encoding
+        if (!hide) document.getElementById("capWrap").classList.add("hidden");
       }
 
-      // CAPACITY CALCULATOR CLIENT LOGIC
-      document.getElementById("singleFileInput").onchange = async function (e) {
-        if (!e.target.files[0]) return;
-        const formData = new FormData();
-        formData.append("file", e.target.files[0]);
+      /* ── PDF MODE TOGGLE ───────────────────────────────────── */
+      function togglePdfPayload(sel) {
+        document
+          .getElementById("pdfPayloadField")
+          .classList.toggle("hidden", sel.value === "extract");
+      }
 
-        log("Analyzing asset capacity...");
+      /* ── BIT DEPTH ─────────────────────────────────────────── */
+      function setDepth(d, btn) {
+        curDepth = d;
+        document.getElementById("depthVal").value = d;
+        document.querySelectorAll(".depth-btn").forEach(function (b) {
+          b.classList.remove("active");
+        });
+        btn.classList.add("active");
+        var f = document.getElementById("imgFile");
+        if (f.files[0]) fetchCap(f.files[0]);
+      }
+
+      /* ── CAPACITY ──────────────────────────────────────────── */
+      document
+        .getElementById("imgFile")
+        .addEventListener("change", function (e) {
+          if (e.target.files[0]) fetchCap(e.target.files[0]);
+        });
+      document
+        .getElementById("payloadText")
+        .addEventListener("input", function (e) {
+          updateCap(e.target.value.length);
+        });
+
+      async function fetchCap(file) {
+        var fd = new FormData();
+        fd.append("file", file);
+        fd.append("bit_depth", curDepth);
+        log("Checking capacity…");
         try {
-          const res = await fetch("/process/capacity", {
+          var res = await fetch("/process/capacity", {
             method: "POST",
-            body: formData,
+            body: fd,
           });
-          const data = await res.json();
-
-          if (data.capacity) {
-            maxBytes = data.capacity;
-            updateCapacityUI(0);
-            document
-              .getElementById("capacityContainer")
-              .classList.remove("hidden");
-            log(`Capacity analyzed: ${maxBytes} bytes available.`, "success");
+          var d = await res.json();
+          if (d.capacity !== undefined) {
+            maxB = d.capacity;
+            updateCap(document.getElementById("payloadText").value.length);
+            document.getElementById("capWrap").classList.remove("hidden");
+            log(
+              maxB.toLocaleString() + " B available @ " + curDepth + "-bit.",
+              "s",
+            );
+          } else {
+            log("Capacity error: " + (d.error || "unknown"), "e");
           }
         } catch (err) {
-          log("Capacity analysis failed.", "error");
+          log("Capacity check failed: " + err.message, "e");
         }
-      };
-
-      document.getElementById("imgText").oninput = function (e) {
-        updateCapacityUI(e.target.value.length);
-      };
-
-      function updateCapacityUI(currentLength) {
-        if (maxBytes === 0) return;
-        const percent = Math.min((currentLength / maxBytes) * 100, 100);
-        const fill = document.getElementById("capacityFill");
-        fill.style.width = percent + "%";
-        fill.style.background = percent > 90 ? "#ef4444" : "#3b82f6";
-        document.getElementById("capacityText").innerText =
-          `${currentLength} / ${maxBytes} Bytes`;
       }
 
-      // MAIN EXECUTION LOGIC (Hide/Extract/Batch/PDF)
-      async function processForm(e, url) {
+      function updateCap(len) {
+        if (!maxB) return;
+        var pct = Math.min((len / maxB) * 100, 100);
+        var fill = document.getElementById("capFill");
+        fill.style.width = pct + "%";
+        fill.style.background =
+          pct > 90 ? "var(--red)" : pct > 70 ? "var(--orange)" : "var(--cyan)";
+        document.getElementById("capTxt").textContent =
+          len.toLocaleString() + " / " + maxB.toLocaleString() + " B";
+      }
+
+      /* ── COPY RESULT ───────────────────────────────────────── */
+      function copyResult() {
+        var t = document.getElementById("resultTxt").textContent;
+        if (!t) return;
+        navigator.clipboard.writeText(t).then(function () {
+          log("Payload copied to clipboard.", "s");
+          toast("Copied to clipboard.", "success");
+        });
+      }
+
+      /* ── GENERIC FORM HANDLER ──────────────────────────────── */
+      // FIX: pass the submit button in explicitly so there's no ambiguity
+      async function handleForm(e, url, submitBtn) {
         e.preventDefault();
-        const form = e.target;
-        const btn = form.querySelector('button[type="submit"]');
-        const mode = form.mode ? form.mode.value : "hide";
+        var form = e.target;
+        var btn = submitBtn;
+        // FIX: read mode from the hidden input (imageForm) or select (pdfForm) by name
+        var modeEl = form.elements["mode"];
+        var mode = modeEl ? modeEl.value : "hide";
 
         btn.disabled = true;
-        const originalText = btn.innerText;
+        var origText = btn.textContent;
         btn.innerHTML =
-          '<i class="fas fa-compact-disc fa-spin mr-2"></i>PROCESSING...';
-        log(`Initiating stream to ${url}...`);
+          '<i class="fas fa-circle-notch fa-spin" style="margin-right:8px"></i>Processing…';
+        log("→ " + url);
 
         try {
-          const response = await fetch(url, {
+          var res = await fetch(url, {
             method: "POST",
             body: new FormData(form),
           });
+          var ct = res.headers.get("content-type") || "";
 
-          if (!response.ok) throw new Error(await response.text());
+          if (!res.ok) {
+            var errMsg;
+            if (ct.includes("json")) {
+              var errJson = await res.json();
+              errMsg = errJson.error || "Server error.";
+            } else {
+              errMsg = await res.text();
+            }
+            throw new Error(errMsg);
+          }
 
           if (mode === "hide" || url.includes("batch")) {
-            const blob = await response.blob();
-            const downloadUrl = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = downloadUrl;
+            var blob = await res.blob();
+            var a = document.createElement("a");
+            a.href = URL.createObjectURL(blob);
             a.download = url.includes("batch")
               ? "stego_batch.zip"
-              : "shield_output_asset.png";
+              : "stego_output.png";
             document.body.appendChild(a);
             a.click();
-            log("Binary asset emitted successfully.", "success");
+            a.remove();
+            log("Asset downloaded successfully.", "s");
+            toast("File downloaded.", "success");
             form.reset();
-            if (url.includes("image")) updateCapacityUI(0);
+            maxB = 0;
+            updateCap(0);
+            document.getElementById("capWrap").classList.add("hidden");
           } else {
-            const data = await response.json();
-            const display = document.getElementById("resultDisplay");
-            const textEl = document.getElementById("resultText");
-
-            display.classList.remove("hidden");
-            textEl.innerText = data.result || "No data returned.";
-            log("Extraction complete.", "success");
+            var data = await res.json();
+            document.getElementById("resultTxt").textContent =
+              data.result || "No data returned.";
+            document.getElementById("resultWrap").classList.remove("hidden");
+            log("Extraction complete.", "s");
+            toast("Payload extracted.", "success");
             form.reset();
           }
         } catch (err) {
-          log(`FAULT DETECTED: ${err.message}`, "error");
+          log("FAULT: " + err.message, "e");
+          toast(err.message, "error");
         } finally {
           btn.disabled = false;
-          btn.innerText = originalText;
+          btn.textContent = origText;
         }
       }
 
-      // ANOMALY DETECTION HANDLER
-      document.getElementById("detectForm").onsubmit = async (e) => {
-        e.preventDefault();
-        const btn = e.target.querySelector("button");
-        const out = document.getElementById("detectOutput");
+      /* ── FORM BINDINGS ─────────────────────────────────────── */
+      document
+        .getElementById("imageForm")
+        .addEventListener("submit", function (e) {
+          handleForm(
+            e,
+            "/process/image",
+            document
+              .getElementById("imageForm")
+              .querySelector("button[type=submit]"),
+          );
+        });
+      document
+        .getElementById("batchForm")
+        .addEventListener("submit", function (e) {
+          handleForm(
+            e,
+            "/process/batch",
+            document
+              .getElementById("batchForm")
+              .querySelector("button[type=submit]"),
+          );
+        });
+      document
+        .getElementById("pdfForm")
+        .addEventListener("submit", function (e) {
+          handleForm(
+            e,
+            "/process/pdf",
+            document
+              .getElementById("pdfForm")
+              .querySelector("button[type=submit]"),
+          );
+        });
 
-        btn.disabled = true;
-        btn.innerHTML =
-          '<i class="fas fa-search-plus fa-spin mr-2"></i>SCANNING...';
-        log("Running heuristic bit-plane analysis...");
+      /* ── ANOMALY DETECTION ─────────────────────────────────── */
+      document
+        .getElementById("detectForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          var btn = document
+            .getElementById("detectForm")
+            .querySelector("button[type=submit]");
+          btn.disabled = true;
+          btn.innerHTML =
+            '<i class="fas fa-circle-notch fa-spin" style="margin-right:8px"></i>Scanning…';
+          log("Running anomaly scan…");
+          try {
+            var res = await fetch("/process/detect", {
+              method: "POST",
+              body: new FormData(e.target),
+            });
+            var data = await res.json();
+            if (data.error) throw new Error(data.error);
 
-        try {
-          const response = await fetch("/process/detect", {
-            method: "POST",
-            body: new FormData(e.target),
-          });
-          const data = await response.json();
+            var susp = data.status === "Suspicious";
+            document.getElementById("threatVal").textContent =
+              data.status || "Unknown";
+            document.getElementById("threatVal").style.color = susp
+              ? "var(--orange)"
+              : "var(--green)";
+            document.getElementById("threatMsg").textContent =
+              data.message || "";
+            var fill = document.getElementById("threatFill");
+            fill.style.width = susp ? "65%" : "12%";
+            fill.style.background = susp ? "var(--orange)" : "var(--green)";
 
-          if (data.error) throw new Error(data.error);
-
-          // Update UI Elements
-          document.getElementById("threatStatus").innerText =
-            data.status || "UNKNOWN";
-          document.getElementById("threatMsg").innerText =
-            data.message || "No message returned.";
-
-          const barEl = document.getElementById("threatBar");
-          const statusEl = document.getElementById("threatStatus");
-
-          if (data.status === "High Probability") {
-            statusEl.className = "text-xl font-black threat-high";
-            barEl.style.width = "95%";
-            barEl.className = "h-full bg-red-500 transition-all duration-1000";
-          } else if (data.status === "Suspicious") {
-            statusEl.className = "text-xl font-black threat-med";
-            barEl.style.width = "60%";
-            barEl.className =
-              "h-full bg-amber-500 transition-all duration-1000";
-          } else {
-            statusEl.className = "text-xl font-black threat-low";
-            barEl.style.width = "15%";
-            barEl.className =
-              "h-full bg-emerald-500 transition-all duration-1000";
+            if (data.heatmap_url) {
+              document.getElementById("heatmapImg").src =
+                data.heatmap_url + "?t=" + Date.now();
+              document.getElementById("heatmapWrap").classList.remove("hidden");
+            }
+            document.getElementById("detectOut").classList.remove("hidden");
+            log("Scan complete: " + data.status, susp ? "e" : "s");
+          } catch (err) {
+            log("SCANNER FAULT: " + err.message, "e");
+            toast(err.message, "error");
+          } finally {
+            btn.disabled = false;
+            btn.textContent = "Scan for Hidden Payload";
           }
+        });
 
-          // Handle Heatmap
-          const hMapImg = document.getElementById("heatmapImage");
-          const hMapCont = document.getElementById("heatmapContainer");
-          if (data.heatmap_url) {
-            hMapImg.src = data.heatmap_url + "?t=" + new Date().getTime();
-            hMapCont.classList.remove("hidden");
+      /* ── VISUAL DIFF ───────────────────────────────────────── */
+      document
+        .getElementById("diffForm")
+        .addEventListener("submit", async function (e) {
+          e.preventDefault();
+          var btn = document
+            .getElementById("diffForm")
+            .querySelector("button[type=submit]");
+          btn.disabled = true;
+          btn.innerHTML =
+            '<i class="fas fa-circle-notch fa-spin" style="margin-right:8px"></i>Computing…';
+          log("Generating visual diff…");
+          try {
+            var res = await fetch("/process/diff", {
+              method: "POST",
+              body: new FormData(e.target),
+            });
+            var data = await res.json();
+            if (data.error) throw new Error(data.error);
+
+            document.getElementById("dPx").textContent =
+              data.changed_pixels.toLocaleString();
+            document.getElementById("dPct").textContent =
+              data.percent_changed + "%";
+            document.getElementById("dMax").textContent = data.max_diff;
+
+            var url = data.diff_url + "?t=" + Date.now();
+            document.getElementById("diffImg").src = url;
+            document.getElementById("diffDL").href = url;
+            document.getElementById("diffOut").classList.remove("hidden");
+            log(
+              data.changed_pixels.toLocaleString() +
+                " px changed (" +
+                data.percent_changed +
+                "%).",
+              "s",
+            );
+            toast(data.percent_changed + "% of pixels differ.", "info");
+          } catch (err) {
+            log("DIFF FAULT: " + err.message, "e");
+            toast(err.message, "error");
+          } finally {
+            btn.disabled = false;
+            btn.textContent = "Generate Diff";
           }
-
-          out.classList.remove("hidden");
-          log("Heuristic analysis complete.", "success");
-        } catch (err) {
-          log(`SCANNER_FAULT: ${err.message}`, "error");
-        } finally {
-          btn.disabled = false;
-          btn.innerText = "SCAN FOR HIDDEN PAYLOAD";
-        }
-      };
-
-      // Form Bindings
-      document.getElementById("imageForm").onsubmit = (e) =>
-        processForm(e, "/process/image");
-      document.getElementById("batchForm").onsubmit = (e) =>
-        processForm(e, "/process/batch");
-      document.getElementById("pdfForm").onsubmit = (e) =>
-        processForm(e, "/process/pdf");
-      // Note: textForm binding removed as requested
+        });
     </script>
   </body>
 </html>

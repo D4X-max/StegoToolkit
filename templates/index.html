@@ -3,228 +3,589 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>StegoToolkit | Operational Hub</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>StegoToolkit</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&family=DM+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
     />
     <style>
-      @import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700&family=JetBrains+Mono&display=swap");
+      :root {
+        --bg: #07090f;
+        --surface: #0d1117;
+        --border: #1c2333;
+        --cyan: #00f5ff;
+        --violet: #bf5af2;
+        --green: #30d158;
+        --orange: #ff9f0a;
+        --red: #ff453a;
+        --text: #e8edf5;
+        --sub: #8899aa;
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      html,
+      body {
+        height: 100%;
+        overflow: hidden;
+      }
 
       body {
-        font-family: "Plus Jakarta Sans", sans-serif;
-        background-color: #05070a;
-        color: #e2e8f0;
-        overflow: hidden;
+        font-family: "DM Sans", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        position: relative;
       }
 
-      /* Terminal Boot Overlay */
-      #boot-sequence {
+      /* Animated gradient mesh background */
+      .bg-mesh {
         position: fixed;
         inset: 0;
-        background: #05070a;
-        z-index: 100;
-        display: flex;
-        flex-direction: column;
-        padding: 2rem;
-        font-family: "JetBrains Mono", monospace;
-        font-size: 10px;
-        color: #3b82f6;
+        z-index: 0;
         overflow: hidden;
       }
-
-      .glass-card {
-        background: rgba(17, 24, 39, 0.4);
-        backdrop-filter: blur(20px);
-        border: 1px solid rgba(255, 255, 255, 0.05);
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      .bg-mesh::before {
+        content: "";
+        position: absolute;
+        width: 700px;
+        height: 700px;
+        background: radial-gradient(
+          circle,
+          rgba(0, 245, 255, 0.07) 0%,
+          transparent 65%
+        );
+        top: -200px;
+        left: -100px;
+        animation: drift1 12s ease-in-out infinite alternate;
       }
-
-      .glass-card:hover {
-        background: rgba(30, 41, 59, 0.6);
-        border-color: rgba(59, 130, 246, 0.3);
-        transform: translateY(-8px);
-        box-shadow:
-          0 20px 40px rgba(0, 0, 0, 0.4),
-          0 0 20px rgba(59, 130, 246, 0.1);
+      .bg-mesh::after {
+        content: "";
+        position: absolute;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(
+          circle,
+          rgba(191, 90, 242, 0.07) 0%,
+          transparent 65%
+        );
+        bottom: -150px;
+        right: -100px;
+        animation: drift2 10s ease-in-out infinite alternate;
       }
-
-      .fade-in {
-        animation: fadeIn 1s ease-out forwards;
-      }
-      @keyframes fadeIn {
+      @keyframes drift1 {
         from {
-          opacity: 0;
-          transform: scale(0.95);
+          transform: translate(0, 0);
         }
         to {
-          opacity: 1;
-          transform: scale(1);
+          transform: translate(60px, 40px);
         }
+      }
+      @keyframes drift2 {
+        from {
+          transform: translate(0, 0);
+        }
+        to {
+          transform: translate(-50px, -30px);
+        }
+      }
+
+      /* Scanline overlay */
+      .scanlines {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 3px,
+          rgba(0, 0, 0, 0.07) 3px,
+          rgba(0, 0, 0, 0.07) 4px
+        );
+      }
+
+      /* ── BOOT ── */
+      #boot {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background: var(--bg);
+        display: flex;
+        align-items: flex-end;
+        padding: 3rem 4rem;
+        font-family: "DM Mono", monospace;
+        font-size: 12px;
+        color: var(--cyan);
+      }
+      #boot-lines {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+        width: 100%;
+      }
+      .bl {
+        opacity: 0;
+        transform: translateX(-10px);
+        transition: all 0.2s ease;
+      }
+      .bl.on {
+        opacity: 1;
+        transform: none;
+      }
+      .bl .ok {
+        color: var(--green);
+      }
+      .bl .wait {
+        color: var(--sub);
+      }
+
+      /* ── HUB ── */
+      #hub {
+        position: relative;
+        z-index: 1;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        opacity: 0;
+        transition: opacity 0.7s ease;
+      }
+      #hub.show {
+        opacity: 1;
+      }
+
+      /* ── NAV ── */
+      .nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 24px 56px;
+        border-bottom: 1px solid var(--border);
+      }
+      .logo-wrap {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .logo-box {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--cyan), var(--violet));
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        color: #000;
+        font-weight: 900;
+        box-shadow: 0 0 20px rgba(0, 245, 255, 0.25);
+      }
+      .logo-text {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 26px;
+        letter-spacing: 0.08em;
+        color: #fff;
+      }
+      .logo-text em {
+        color: var(--cyan);
+        font-style: normal;
+      }
+      .nav-pill {
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        color: var(--sub);
+        background: var(--surface);
+        border: 1px solid var(--border);
+        border-radius: 100px;
+        padding: 6px 16px;
+        letter-spacing: 0.1em;
+      }
+
+      /* ── HERO ── */
+      .hero {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 52px;
+        padding: 0 40px;
+      }
+
+      .hero-copy {
+        text-align: center;
+      }
+      .eyebrow {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        letter-spacing: 0.35em;
+        color: var(--cyan);
+        text-transform: uppercase;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+      }
+      .eyebrow::before,
+      .eyebrow::after {
+        content: "";
+        display: block;
+        width: 40px;
+        height: 1px;
+        background: linear-gradient(90deg, transparent, var(--cyan));
+      }
+      .eyebrow::after {
+        background: linear-gradient(90deg, var(--cyan), transparent);
+      }
+
+      h1 {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: clamp(72px, 10vw, 120px);
+        line-height: 0.9;
+        letter-spacing: 0.04em;
+        color: #fff;
+        margin-bottom: 18px;
+      }
+      h1 .glow {
+        background: linear-gradient(90deg, var(--cyan) 0%, var(--violet) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: drop-shadow(0 0 30px rgba(0, 245, 255, 0.3));
+      }
+      .hero-sub {
+        font-family: "DM Mono", monospace;
+        font-size: 12px;
+        color: var(--sub);
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+
+      /* ── CARDS ── */
+      .cards {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        width: 100%;
+        max-width: 860px;
+      }
+
+      .card {
+        position: relative;
+        text-decoration: none;
+        color: inherit;
+        background: var(--surface);
+        border-radius: 22px;
+        border: 1px solid var(--border);
+        padding: 36px 36px 30px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        overflow: hidden;
+        cursor: pointer;
+        transition:
+          transform 0.3s ease,
+          border-color 0.3s ease,
+          box-shadow 0.3s ease;
+      }
+      .card:hover {
+        transform: translateY(-6px);
+      }
+
+      .card-cyan {
+        border-color: rgba(0, 245, 255, 0.15);
+      }
+      .card-cyan:hover {
+        border-color: rgba(0, 245, 255, 0.5);
+        box-shadow:
+          0 0 40px rgba(0, 245, 255, 0.12),
+          0 20px 60px rgba(0, 0, 0, 0.5);
+      }
+      .card-violet {
+        border-color: rgba(191, 90, 242, 0.15);
+      }
+      .card-violet:hover {
+        border-color: rgba(191, 90, 242, 0.5);
+        box-shadow:
+          0 0 40px rgba(191, 90, 242, 0.12),
+          0 20px 60px rgba(0, 0, 0, 0.5);
+      }
+
+      /* Top glow stripe */
+      .card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 2px;
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+      .card-cyan::before {
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--cyan),
+          transparent
+        );
+      }
+      .card-violet::before {
+        background: linear-gradient(
+          90deg,
+          transparent,
+          var(--violet),
+          transparent
+        );
+      }
+      .card:hover::before {
+        opacity: 1;
+      }
+
+      .card-num {
+        position: absolute;
+        top: 28px;
+        right: 28px;
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 56px;
+        opacity: 0.04;
+        letter-spacing: -0.02em;
+        color: #fff;
+        line-height: 1;
+      }
+
+      .card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        margin-bottom: 6px;
+      }
+      .ci-cyan {
+        background: rgba(0, 245, 255, 0.1);
+        color: var(--cyan);
+        box-shadow: 0 0 16px rgba(0, 245, 255, 0.15);
+      }
+      .ci-violet {
+        background: rgba(191, 90, 242, 0.1);
+        color: var(--violet);
+        box-shadow: 0 0 16px rgba(191, 90, 242, 0.15);
+      }
+
+      .card-title {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 30px;
+        letter-spacing: 0.06em;
+        color: #fff;
+        line-height: 1;
+      }
+      .card-desc {
+        font-size: 13px;
+        color: var(--sub);
+        line-height: 1.65;
+        flex: 1;
+        font-weight: 300;
+      }
+
+      .card-cta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        font-weight: 500;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        margin-top: 10px;
+        transition: gap 0.2s;
+      }
+      .card-cta-cyan {
+        color: var(--cyan);
+      }
+      .card-cta-violet {
+        color: var(--violet);
+      }
+      .card:hover .card-cta {
+        gap: 14px;
+      }
+      .card-cta .arr {
+        font-size: 14px;
+      }
+
+      .live-dot {
+        position: absolute;
+        top: 28px;
+        right: 80px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        background: rgba(48, 209, 88, 0.08);
+        border: 1px solid rgba(48, 209, 88, 0.25);
+        border-radius: 100px;
+        padding: 4px 10px;
+      }
+      .live-ring {
+        width: 7px;
+        height: 7px;
+        position: relative;
+      }
+      .live-ring span {
+        position: absolute;
+        inset: 0;
+        border-radius: 50%;
+        background: var(--green);
+      }
+      .live-ring span:first-child {
+        animation: ping 1.4s ease-in-out infinite;
+        opacity: 0.5;
+      }
+      @keyframes ping {
+        75%,
+        100% {
+          transform: scale(2.3);
+          opacity: 0;
+        }
+      }
+      .live-txt {
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        color: var(--green);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+
+      /* ── FOOTER ── */
+      footer {
+        text-align: center;
+        padding: 16px;
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        color: var(--sub);
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        border-top: 1px solid var(--border);
+        opacity: 0.4;
       }
     </style>
   </head>
-  <body class="min-h-screen flex flex-col">
-    <div id="boot-sequence">
-      <div id="boot-log" class="space-y-1"></div>
+  <body>
+    <div class="bg-mesh"></div>
+    <div class="scanlines"></div>
+
+    <!-- BOOT -->
+    <div id="boot">
+      <div id="boot-lines"></div>
     </div>
 
-    <div id="main-hub" class="hidden opacity-0 flex-grow flex flex-col">
-      <nav class="p-8">
-        <div
-          class="flex items-center space-x-3 justify-center md:justify-start"
-        >
-          <div
-            class="bg-gradient-to-tr from-blue-600 to-indigo-600 p-2 rounded-xl shadow-lg"
-          >
-            <i class="fas fa-user-secret text-white text-xl"></i>
-          </div>
-          <h1 class="text-xl font-bold tracking-tighter uppercase">
-            Stego<span class="text-blue-500">Toolkit</span>
-          </h1>
+    <!-- HUB -->
+    <div id="hub">
+      <nav class="nav">
+        <div class="logo-wrap">
+          <div class="logo-box"><i class="fas fa-user-secret"></i></div>
+          <div class="logo-text">Stego<em>Toolkit</em></div>
         </div>
+        <div class="nav-pill">AES-256-CBC · HMAC-SHA256 · LSB · PBKDF2</div>
       </nav>
 
-      <main class="flex-grow flex flex-col items-center justify-center px-6">
-        <div class="text-center mb-16">
-          <h2 class="text-4xl md:text-5xl font-extrabold tracking-tight mb-4">
-            Operational
-            <span
-              class="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent"
-              >Environments</span
-            >
-          </h2>
-          <p
-            class="text-slate-500 font-mono text-[10px] uppercase tracking-[0.4em]"
-          >
-            Select protocol for deployment
-          </p>
+      <div class="hero">
+        <div class="hero-copy">
+          <div class="eyebrow">StegoToolkit — Hide smarter, not harder</div>
+          <h1>MODE<br /><span class="glow">SELECTION</span></h1>
+          <p class="hero-sub">Select operational environment</p>
         </div>
 
-        <div class="grid md:grid-cols-2 gap-8 w-full max-w-5xl">
-          <a
-            href="/local"
-            class="group glass-card rounded-3xl p-10 flex flex-col"
-          >
-            <div
-              class="w-14 h-14 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-blue-500/20 transition-colors"
-            >
-              <i class="fas fa-folder-open text-2xl text-blue-500"></i>
+        <div class="cards">
+          <a href="/local" class="card card-cyan">
+            <div class="card-num">01</div>
+            <div class="card-icon ci-cyan"><i class="fas fa-terminal"></i></div>
+            <div class="card-title">Local Toolkit</div>
+            <div class="card-desc">
+              Forensic suite for file-based steganography. LSB encoding, PDF
+              metadata injection, anomaly scanning, visual diff analysis.
             </div>
-            <h3 class="text-2xl font-bold mb-3">Local Stegotoolkit</h3>
-            <p class="text-slate-400 text-sm leading-relaxed mb-8">
-              Forensic suite for file analysis. Execute LSB Encoding, PDF
-              Metadata Injection, and Anomaly Scanning.
-            </p>
-            <div
-              class="mt-auto flex items-center text-xs font-bold uppercase tracking-widest text-blue-500"
-            >
-              Launch Local
-              <i
-                class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"
-              ></i>
+            <div class="card-cta card-cta-cyan">
+              Launch <span class="arr">→</span>
             </div>
           </a>
-
-          <a
-            href="/live"
-            class="group glass-card rounded-3xl p-10 flex flex-col relative overflow-hidden"
-          >
-            <div
-              class="absolute top-6 right-6 flex items-center gap-2 bg-green-500/10 px-3 py-1 rounded-full border border-green-500/20"
-            >
-              <span class="relative flex h-2 w-2">
-                <span
-                  class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"
-                ></span>
-                <span
-                  class="relative inline-flex rounded-full h-2 w-2 bg-green-500"
-                ></span>
-              </span>
-              <span class="text-[9px] text-green-500 font-bold uppercase"
-                >Ready</span
-              >
+          <a href="/live" class="card card-violet">
+            <div class="card-num">02</div>
+            <div class="live-dot">
+              <div class="live-ring"><span></span><span></span></div>
+              <span class="live-txt">Live</span>
             </div>
-            <div
-              class="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-indigo-500/20 transition-colors"
-            >
-              <i class="fas fa-bolt text-2xl text-indigo-500"></i>
+            <div class="card-icon ci-violet">
+              <i class="fas fa-satellite-dish"></i>
             </div>
-            <h3 class="text-2xl font-bold mb-3">Live Stego Chat</h3>
-            <p class="text-slate-400 text-sm leading-relaxed mb-8">
-              Real-time covert link. Tunnel AES-256 encrypted payloads through
-              WebSocket image streams.
-            </p>
-            <div
-              class="mt-auto flex items-center text-xs font-bold uppercase tracking-widest text-indigo-500"
-            >
-              Initialize Live
-              <i
-                class="fas fa-arrow-right ml-2 group-hover:translate-x-2 transition-transform"
-              ></i>
+            <div class="card-title">Live Stream</div>
+            <div class="card-desc">
+              Real-time covert channel. Tunnel AES-256 encrypted payloads
+              through WebSocket image streams to connected peers.
+            </div>
+            <div class="card-cta card-cta-violet">
+              Connect <span class="arr">→</span>
             </div>
           </a>
         </div>
+      </div>
 
-        <footer
-          class="mt-20 opacity-30 font-mono text-[9px] tracking-[0.5em] uppercase text-center"
-        >
-          dhruv srijit // mit bengaluru // crypt-ops v2.1
-        </footer>
-      </main>
+      <footer>
+        Dhruv · Srijit &nbsp;·&nbsp; MIT Bengaluru &nbsp;·&nbsp; Crypt-Ops v2.2
+      </footer>
     </div>
 
     <script>
-      const logs = [
-        "INITIALIZING BOOT_LOADER_V2.1...",
-        "LOADING CRYPTOGRAPHY_MODULES (AES-256-CBC)...",
-        "CONNECTING TO STEGO_ENGINE... [OK]",
-        "VERIFYING HEURISTIC_SCANNER_CORE... [OK]",
-        "MOUNTING WEBSOCKET_TUNNEL_SERVICE...",
-        "ESTABLISHING SECURE_SESSION_HANDSHAKE...",
-        "SYSTEM_READY: REDIRECTING TO HUB.",
+      const LINES = [
+        { t: "KERNEL_LOADER v2.2.0 · initializing...", delay: 0 },
+        { t: "AES-256-CBC + PBKDF2-SHA256 · loaded", ok: true, delay: 260 },
+        { t: "HMAC-SHA256 integrity layer · active", ok: true, delay: 480 },
+        { t: "LSB stego engine [1..3-bit] · ready", ok: true, delay: 680 },
+        { t: "ML anomaly scanner · standby", ok: true, delay: 860 },
+        { t: "WebSocket tunnel · binding 5000", wait: true, delay: 1040 },
+        { t: "ALL SYSTEMS NOMINAL · booting hub", ok: true, delay: 1220 },
       ];
 
-      const logContainer = document.getElementById("boot-log");
-
-      async function runBoot() {
-        console.log("Boot sequence started...");
-
-        for (let i = 0; i < logs.length; i++) {
+      async function boot() {
+        const container = document.getElementById("boot-lines");
+        let prev = 0;
+        for (const line of LINES) {
+          await new Promise((r) => setTimeout(r, line.delay - prev));
+          prev = line.delay;
           const p = document.createElement("p");
-          p.innerText = `> ${logs[i]}`;
-          logContainer.appendChild(p);
-          // Scroll to bottom of logs
-          window.scrollTo(0, document.body.scrollHeight);
-          await new Promise((r) => setTimeout(r, 300));
+          p.className = "bl";
+          const badge = line.ok
+            ? '<span class="ok">  [OK]</span>'
+            : line.wait
+              ? '<span class="wait">  [WAIT]</span>'
+              : "";
+          p.innerHTML = `<span style="color:var(--sub)">›</span> ${line.t}${badge}`;
+          container.appendChild(p);
+          requestAnimationFrame(() =>
+            requestAnimationFrame(() => p.classList.add("on")),
+          );
         }
-
-        console.log("Boot sequence finished. Transitioning...");
-
+        await new Promise((r) => setTimeout(r, 420));
+        const boot = document.getElementById("boot");
+        boot.style.transition = "opacity 0.5s";
+        boot.style.opacity = "0";
         setTimeout(() => {
-          // 1. Hide the boot overlay
-          const bootOverlay = document.getElementById("boot-sequence");
-          bootOverlay.style.display = "none";
-
-          // 2. Show the hub
-          const hub = document.getElementById("main-hub");
-          hub.classList.remove("hidden");
-
-          // 3. Trigger the fade-in
-          setTimeout(() => {
-            hub.classList.add("fade-in");
-            hub.style.opacity = "1";
-            // Restore scrolling if needed
-            document.body.style.overflow = "auto";
-          }, 10);
-
-          console.log("Hub is now visible.");
-        }, 600);
+          boot.style.display = "none";
+          document.getElementById("hub").classList.add("show");
+        }, 520);
       }
 
-      // Run on load
-      window.onload = runBoot;
+      window.onload = boot;
     </script>
   </body>
 </html>
