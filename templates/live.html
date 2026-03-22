@@ -42,7 +42,6 @@
         height: 100%;
         overflow: hidden;
       }
-
       body {
         font-family: "DM Sans", sans-serif;
         background: var(--bg);
@@ -64,8 +63,6 @@
           rgba(0, 0, 0, 0.05) 4px
         );
       }
-
-      /* Glow blobs */
       .blob {
         position: fixed;
         border-radius: 50%;
@@ -73,21 +70,20 @@
         z-index: 0;
         filter: blur(80px);
       }
-      .blob-1 {
+      .b1 {
         width: 500px;
         height: 500px;
         background: rgba(0, 245, 255, 0.04);
         top: -100px;
         left: -100px;
       }
-      .blob-2 {
+      .b2 {
         width: 400px;
         height: 400px;
         background: rgba(191, 90, 242, 0.04);
         bottom: -80px;
         right: -80px;
       }
-
       ::-webkit-scrollbar {
         width: 3px;
       }
@@ -99,7 +95,6 @@
         border-radius: 3px;
       }
 
-      /* ── NAV ── */
       nav {
         position: relative;
         z-index: 10;
@@ -138,6 +133,25 @@
         letter-spacing: 0.1em;
         color: var(--cyan);
         text-shadow: 0 0 20px rgba(0, 245, 255, 0.4);
+      }
+      .room-chip {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        background: rgba(0, 245, 255, 0.06);
+        border: 1px solid rgba(0, 245, 255, 0.2);
+        border-radius: 100px;
+        padding: 5px 14px;
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        color: var(--cyan);
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .room-chip.inactive {
+        background: rgba(107, 124, 147, 0.06);
+        border-color: rgba(107, 124, 147, 0.2);
+        color: var(--sub);
       }
       .live-badge {
         display: flex;
@@ -178,7 +192,108 @@
         text-transform: uppercase;
       }
 
-      /* ── GRID ── */
+      /* ROOM GATE */
+      #roomGate {
+        position: relative;
+        z-index: 1;
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px;
+      }
+      .gate-box {
+        background: var(--srf);
+        border: 1px solid var(--bdr);
+        border-radius: 24px;
+        padding: 48px;
+        width: 100%;
+        max-width: 440px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        text-align: center;
+      }
+      .gate-icon {
+        font-size: 40px;
+        margin-bottom: 4px;
+      }
+      .gate-title {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 36px;
+        letter-spacing: 0.06em;
+        color: #fff;
+      }
+      .gate-sub {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        color: var(--sub);
+        line-height: 1.7;
+        letter-spacing: 0.05em;
+      }
+      .gate-row {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+      .gate-input {
+        width: 100%;
+        background: var(--s2);
+        border: 1px solid var(--bdr2);
+        border-radius: 11px;
+        padding: 12px 16px;
+        color: var(--text);
+        font-family: "DM Mono", monospace;
+        font-size: 13px;
+        outline: none;
+        transition:
+          border-color 0.2s,
+          box-shadow 0.2s;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+      }
+      .gate-input::placeholder {
+        text-transform: none;
+        letter-spacing: 0.05em;
+        color: var(--sub);
+      }
+      .gate-input:focus {
+        border-color: var(--cyan);
+        box-shadow: 0 0 0 3px rgba(0, 245, 255, 0.1);
+      }
+      .gate-input-plain {
+        text-transform: none;
+        letter-spacing: 0;
+      }
+      .gate-btn {
+        width: 100%;
+        padding: 14px;
+        border: none;
+        border-radius: 13px;
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 18px;
+        letter-spacing: 0.12em;
+        background: linear-gradient(135deg, #00b8cc, #0066ff);
+        color: #fff;
+        cursor: pointer;
+        box-shadow: 0 4px 24px rgba(0, 245, 255, 0.2);
+        transition:
+          opacity 0.2s,
+          box-shadow 0.2s;
+      }
+      .gate-btn:hover {
+        opacity: 0.9;
+        box-shadow: 0 4px 40px rgba(0, 245, 255, 0.35);
+      }
+      .codename-hint {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        color: var(--sub);
+        letter-spacing: 0.1em;
+        margin-top: -12px;
+      }
+
+      /* MAIN GRID */
       .grid {
         position: relative;
         z-index: 1;
@@ -187,29 +302,36 @@
         display: grid;
         grid-template-columns: 1fr 320px;
         min-height: 0;
+        display: none;
+      }
+      .grid.active {
+        display: grid;
       }
 
-      /* ── FEED COL ── */
+      /* FEED */
       .feed-col {
         display: flex;
         flex-direction: column;
         border-right: 1px solid var(--bdr);
         min-height: 0;
       }
-
       .feed-hd {
         flex-shrink: 0;
-        padding: 16px 24px;
+        padding: 14px 24px;
         border-bottom: 1px solid var(--bdr);
         display: flex;
         justify-content: space-between;
         align-items: center;
       }
+      .feed-hd-l {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
       .feed-hd-title {
         font-family: "Bebas Neue", sans-serif;
         font-size: 18px;
         letter-spacing: 0.08em;
-        color: var(--text);
       }
       .pkt-counter {
         font-family: "DM Mono", monospace;
@@ -219,6 +341,52 @@
         border: 1px solid var(--bdr2);
         border-radius: 8px;
         padding: 4px 10px;
+      }
+      .auto-toggle {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        color: var(--sub);
+        cursor: pointer;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        transition: color 0.2s;
+      }
+      .auto-toggle:hover {
+        color: var(--text);
+      }
+      .auto-toggle.on {
+        color: var(--green);
+      }
+      .toggle-pill {
+        width: 28px;
+        height: 16px;
+        border-radius: 100px;
+        border: 1px solid var(--bdr2);
+        background: var(--faint);
+        position: relative;
+        transition: all 0.2s;
+      }
+      .toggle-pill::after {
+        content: "";
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 10px;
+        height: 10px;
+        border-radius: 50%;
+        background: var(--sub);
+        transition: all 0.2s;
+      }
+      .auto-toggle.on .toggle-pill {
+        background: rgba(48, 209, 88, 0.2);
+        border-color: var(--green);
+      }
+      .auto-toggle.on .toggle-pill::after {
+        background: var(--green);
+        left: 14px;
       }
 
       #feed {
@@ -230,7 +398,6 @@
         gap: 10px;
         align-content: start;
       }
-
       .empty-feed {
         grid-column: 1/-1;
         display: flex;
@@ -253,7 +420,6 @@
         text-align: center;
       }
 
-      /* PACKET CARD */
       .pkt {
         position: relative;
         border-radius: 12px;
@@ -300,38 +466,49 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        gap: 6px;
+        gap: 5px;
       }
       .pkt:hover .pkt-overlay {
         opacity: 1;
       }
       .pkt-icon {
         color: var(--cyan);
-        font-size: 20px;
+        font-size: 18px;
       }
-      .pkt-label {
+      .pkt-lbl {
         font-family: "DM Mono", monospace;
         font-size: 8px;
         color: #fff;
         letter-spacing: 0.1em;
         text-transform: uppercase;
       }
-      .pkt-num {
+      .pkt-meta {
         position: absolute;
-        top: 5px;
-        left: 6px;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        padding: 5px 7px;
+        background: linear-gradient(transparent, rgba(0, 0, 0, 0.8));
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+      }
+      .pkt-num {
         font-family: "DM Mono", monospace;
         font-size: 8px;
         color: var(--sub);
-        background: rgba(7, 9, 15, 0.8);
-        border-radius: 4px;
-        padding: 2px 5px;
+      }
+      .pkt-sender {
+        font-family: "DM Mono", monospace;
+        font-size: 8px;
+        color: var(--cyan);
+        font-weight: 500;
       }
 
-      /* ── COMPOSE ── */
+      /* COMPOSE */
       .compose {
         flex-shrink: 0;
-        padding: 16px 20px;
+        padding: 14px 20px;
         border-top: 1px solid var(--bdr);
         background: var(--srf);
         display: flex;
@@ -343,7 +520,6 @@
         grid-template-columns: 1fr 1fr;
         gap: 8px;
       }
-
       .cmp-input {
         width: 100%;
         background: var(--s2);
@@ -362,7 +538,6 @@
         border-color: var(--cyan);
         box-shadow: 0 0 0 3px rgba(0, 245, 255, 0.08);
       }
-
       .carrier-btn {
         width: 100%;
         background: var(--s2);
@@ -383,7 +558,6 @@
         border-color: var(--cyan);
         color: var(--text);
       }
-
       .cmp-textarea {
         width: 100%;
         background: var(--s2);
@@ -401,7 +575,6 @@
       .cmp-textarea:focus {
         border-color: var(--cyan);
       }
-
       .send-btn {
         width: 100%;
         padding: 13px;
@@ -432,7 +605,7 @@
         box-shadow: none;
       }
 
-      /* ── KERNEL ── */
+      /* KERNEL */
       .kernel-col {
         display: flex;
         flex-direction: column;
@@ -468,7 +641,6 @@
       .kernel-clr:hover {
         color: var(--text);
       }
-
       #stream {
         flex: 1;
         overflow-y: auto;
@@ -500,8 +672,9 @@
       .c-w {
         color: var(--orange);
       }
-
-      /* Decoded payload box */
+      .c-v {
+        color: var(--violet);
+      }
       .decoded-box {
         background: rgba(48, 209, 88, 0.06);
         border: 1px solid rgba(48, 209, 88, 0.25);
@@ -525,41 +698,101 @@
           transform: none;
         }
       }
-      .decoded-label {
+      .decoded-sender {
         font-size: 8px;
         color: var(--green);
         letter-spacing: 0.15em;
         text-transform: uppercase;
         margin-bottom: 6px;
       }
+      .event-line {
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        color: var(--sub);
+        font-style: italic;
+        padding: 3px 0;
+      }
     </style>
   </head>
   <body>
-    <div class="blob blob-1"></div>
-    <div class="blob blob-2"></div>
+    <div class="blob b1"></div>
+    <div class="blob b2"></div>
 
     <nav>
       <div class="nav-l">
         <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> Hub</a>
         <span class="page-ttl">Live Stego Stream</span>
       </div>
-      <div class="live-badge">
-        <div class="ring"><span></span><span></span></div>
-        <span class="live-lbl">Socket Active</span>
+      <div style="display: flex; align-items: center; gap: 12px">
+        <div id="roomChip" class="room-chip inactive">
+          <i class="fas fa-door-open" style="font-size: 10px"></i> No Room
+        </div>
+        <div class="live-badge">
+          <div class="ring"><span></span><span></span></div>
+          <span class="live-lbl">Socket Active</span>
+        </div>
       </div>
     </nav>
 
-    <div class="grid">
-      <!-- FEED + COMPOSE -->
+    <!-- ROOM GATE -->
+    <div id="roomGate">
+      <div class="gate-box">
+        <div>
+          <div class="gate-icon">📡</div>
+          <div class="gate-title">Join a Channel</div>
+          <p class="gate-sub">
+            Enter a room code to join an existing covert channel, or create a
+            new one. Only people in the same room will see your packets.
+          </p>
+        </div>
+        <div class="gate-row">
+          <div>
+            <input
+              class="gate-input"
+              id="roomInput"
+              placeholder="Room Code"
+              maxlength="12"
+            />
+          </div>
+          <div>
+            <input
+              class="gate-input gate-input-plain"
+              id="codenameInput"
+              placeholder="Codename (auto)"
+            />
+          </div>
+        </div>
+        <p class="codename-hint" id="codenameHint"></p>
+        <input
+          class="gate-input"
+          id="aesKeyInput"
+          placeholder="AES-256 Key for this session"
+          type="password"
+        />
+        <button class="gate-btn" onclick="joinRoom()">
+          <i class="fas fa-satellite-dish" style="margin-right: 8px"></i
+          >Initialize Channel
+        </button>
+      </div>
+    </div>
+
+    <!-- MAIN GRID (shown after joining) -->
+    <div class="grid" id="mainGrid">
       <div class="feed-col">
         <div class="feed-hd">
-          <span class="feed-hd-title">Intercepted Packet Feed</span>
-          <span id="pktCnt" class="pkt-counter">0 Packets</span>
+          <div class="feed-hd-l">
+            <span class="feed-hd-title">Packet Feed</span>
+            <span id="pktCnt" class="pkt-counter">0 Packets</span>
+          </div>
+          <div id="autoToggle" class="auto-toggle on" onclick="toggleAuto()">
+            <div class="toggle-pill"></div>
+            Auto-Decrypt
+          </div>
         </div>
         <div id="feed">
           <div class="empty-feed" id="emptyFeed">
             <div class="empty-icon">📡</div>
-            <div class="empty-txt">Awaiting incoming traffic…</div>
+            <div class="empty-txt">Awaiting incoming packets…</div>
           </div>
         </div>
         <div class="compose">
@@ -568,14 +801,16 @@
               class="carrier-btn"
               onclick="document.getElementById('carrierIn').click()"
             >
-              <span id="carrierLbl">Select carrier image</span>
-              <i class="fas fa-image" style="font-size: 12px"></i>
+              <span id="carrierLbl">Select carrier image</span
+              ><i class="fas fa-image" style="font-size: 12px"></i>
             </button>
             <input
               class="cmp-input"
-              id="passIn"
+              id="passDisplay"
               type="password"
-              placeholder="AES-256 Key…"
+              placeholder="AES key (set at join)"
+              readonly
+              style="opacity: 0.5; cursor: default"
             />
           </div>
           <textarea
@@ -598,11 +833,10 @@
         </div>
       </div>
 
-      <!-- KERNEL STREAM -->
       <div class="kernel-col">
         <div class="kernel-hd">
-          <span class="kernel-title">Kernel Stream</span>
-          <button class="kernel-clr" onclick="clearStream()">Clear</button>
+          <span class="kernel-title">Kernel Stream</span
+          ><button class="kernel-clr" onclick="clearStream()">Clear</button>
         </div>
         <div id="stream">
           <div class="ke">
@@ -615,26 +849,128 @@
 
     <script>
       const socket = io();
-      let n = 0;
+      let myRoom = "",
+        myCodename = "",
+        myPass = "",
+        autoDecrypt = true,
+        pCount = 0;
 
-      socket.on("connect", () => klog("Secure tunnel established.", "s"));
-
-      function onCarrier(inp) {
-        const nm = inp.files[0]?.name || "Select carrier image";
-        document.getElementById("carrierLbl").textContent =
-          nm.length > 24 ? nm.slice(0, 21) + "…" : nm;
-        klog(`Carrier: ${nm}`, "i");
+      // ── CODENAME GENERATOR ────────────────────────────────────
+      const ADJECTIVES = [
+        "GHOST",
+        "PHANTOM",
+        "CIPHER",
+        "SHADOW",
+        "VECTOR",
+        "ECHO",
+        "NEXUS",
+        "BINARY",
+        "ROGUE",
+        "STATIC",
+      ];
+      const NUMBERS = () => Math.floor(Math.random() * 90 + 10);
+      function randCodename() {
+        return (
+          ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)] +
+          "-" +
+          NUMBERS()
+        );
       }
 
-      async function sendSecret() {
-        const msg = document.getElementById("msgIn").value.trim();
-        const pass = document.getElementById("passIn").value.trim();
-        const btn = document.getElementById("sendBtn");
-        if (!msg || !pass) {
-          klog("ERR: Payload and key required.", "e");
+      window.onload = () => {
+        const cn = randCodename();
+        document.getElementById("codenameInput").placeholder = cn;
+        document.getElementById("codenameHint").textContent =
+          `Auto-assigned: ${cn}`;
+      };
+
+      // ── JOIN ROOM ─────────────────────────────────────────────
+      function joinRoom() {
+        const room = document
+          .getElementById("roomInput")
+          .value.trim()
+          .toUpperCase();
+        const codename =
+          document.getElementById("codenameInput").value.trim().toUpperCase() ||
+          document.getElementById("codenameInput").placeholder;
+        const pass = document.getElementById("aesKeyInput").value.trim();
+
+        if (!room) {
+          alert("Enter a room code.");
+          return;
+        }
+        if (!pass) {
+          alert("Enter an AES session key.");
           return;
         }
 
+        myRoom = room;
+        myCodename = codename;
+        myPass = pass;
+        document.getElementById("passDisplay").value = pass;
+
+        socket.emit("join_room", { room, codename });
+
+        document.getElementById("roomGate").style.display = "none";
+        document.getElementById("mainGrid").classList.add("active");
+        const chip = document.getElementById("roomChip");
+        chip.innerHTML = `<i class="fas fa-lock" style="font-size:10px"></i> ${room}`;
+        chip.className = "room-chip";
+        klog(`Joined channel ${room} as ${codename}.`, "s");
+      }
+
+      document.getElementById("roomInput").addEventListener("keydown", (e) => {
+        if (e.key === "Enter") document.getElementById("aesKeyInput").focus();
+      });
+      document
+        .getElementById("aesKeyInput")
+        .addEventListener("keydown", (e) => {
+          if (e.key === "Enter") joinRoom();
+        });
+
+      // ── SOCKET EVENTS ─────────────────────────────────────────
+      socket.on("connect", () => klog("Secure tunnel established.", "s"));
+      socket.on("room_joined", (d) =>
+        klog(`Channel ${d.room} active. Identity: ${d.codename}`, "s"),
+      );
+      socket.on("room_event", (d) => {
+        const s = document.getElementById("stream");
+        const e = document.createElement("div");
+        e.className = "event-line";
+        e.textContent = `— ${d.message} —`;
+        s.appendChild(e);
+        s.scrollTop = s.scrollHeight;
+      });
+
+      // ── CARRIER ───────────────────────────────────────────────
+      function onCarrier(inp) {
+        const nm = inp.files[0]?.name || "Select carrier image";
+        document.getElementById("carrierLbl").textContent =
+          nm.length > 22 ? nm.slice(0, 19) + "…" : nm;
+        klog(`Carrier: ${nm}`, "i");
+      }
+
+      // ── AUTO-DECRYPT TOGGLE ───────────────────────────────────
+      function toggleAuto() {
+        autoDecrypt = !autoDecrypt;
+        document
+          .getElementById("autoToggle")
+          .classList.toggle("on", autoDecrypt);
+        klog(`Auto-decrypt: ${autoDecrypt ? "ON" : "OFF"}.`, "i");
+      }
+
+      // ── SEND ──────────────────────────────────────────────────
+      async function sendSecret() {
+        const msg = document.getElementById("msgIn").value.trim();
+        const btn = document.getElementById("sendBtn");
+        if (!msg) {
+          klog("ERR: Empty payload.", "e");
+          return;
+        }
+        if (!myRoom) {
+          klog("ERR: Not in a room.", "e");
+          return;
+        }
         btn.disabled = true;
         btn.innerHTML =
           '<i class="fas fa-circle-notch fa-spin" style="margin-right:8px"></i>Encoding…';
@@ -648,8 +984,14 @@
             r.readAsDataURL(fi.files[0]);
           });
 
-        klog("Injecting AES payload into carrier…", "i");
-        socket.emit("send_secure_msg", { msg, password: pass, carrier: b64 });
+        klog("Injecting AES payload…", "i");
+        socket.emit("send_secure_msg", {
+          msg,
+          password: myPass,
+          carrier: b64,
+          room: myRoom,
+          codename: myCodename,
+        });
         document.getElementById("msgIn").value = "";
         btn.disabled = false;
         btn.innerHTML =
@@ -657,43 +999,50 @@
       }
 
       socket.on("sent_confirmation", () =>
-        klog("Packet tunneled to peer.", "s"),
+        klog(`Packet tunneled → ${myRoom}.`, "s"),
       );
 
+      // ── RECEIVE ───────────────────────────────────────────────
       socket.on("new_stego_packet", (data) => {
         document.getElementById("emptyFeed")?.remove();
-        n++;
+        pCount++;
         document.getElementById("pktCnt").textContent =
-          `${n} Packet${n !== 1 ? "s" : ""}`;
+          `${pCount} Packet${pCount !== 1 ? "s" : ""}`;
 
         const feed = document.getElementById("feed");
         const card = document.createElement("div");
         card.className = "pkt";
+        const sender = data.codename || "UNKNOWN";
         card.innerHTML = `
       <img src="data:image/png;base64,${data.image}" alt="pkt"/>
-      <div class="pkt-overlay" onclick="manualDecode('${data.image}')">
+      <div class="pkt-overlay" onclick="manualDecode('${data.image}','${sender}')">
         <div class="pkt-icon"><i class="fas fa-unlock-alt"></i></div>
-        <div class="pkt-label">Click to decode</div>
+        <div class="pkt-lbl">Decode</div>
       </div>
-      <div class="pkt-num">#${n}</div>
+      <div class="pkt-meta">
+        <span class="pkt-num">#${pCount}</span>
+        <span class="pkt-sender">${sender}</span>
+      </div>
     `;
         feed.prepend(card);
-        klog(`[INBOUND] Packet #${n} intercepted.`, "w");
+        klog(`[INBOUND] Packet #${pCount} from ${sender}.`, "w");
 
-        const pass = document.getElementById("passIn").value;
-        if (pass)
-          socket.emit("decrypt_packet", { image: data.image, password: pass });
-        else klog("Set AES key to auto-decode.", "i");
+        if (autoDecrypt && myPass)
+          socket.emit("decrypt_packet", {
+            image: data.image,
+            password: myPass,
+            bit_depth: data.bit_depth || 1,
+          });
+        else klog("Enter AES key or enable auto-decrypt.", "i");
       });
 
-      function manualDecode(b64) {
-        const pass = document.getElementById("passIn").value;
-        if (!pass) {
-          klog("ERR: Enter AES key first.", "e");
+      function manualDecode(b64, sender) {
+        if (!myPass) {
+          klog("ERR: No AES key set.", "e");
           return;
         }
-        klog("Retrying decrypt…", "i");
-        socket.emit("decrypt_packet", { image: b64, password: pass });
+        klog(`Decrypting packet from ${sender}…`, "i");
+        socket.emit("decrypt_packet", { image: b64, password: myPass });
       }
 
       socket.on("decrypted_result", (data) => {
@@ -706,7 +1055,7 @@
           const s = document.getElementById("stream");
           const box = document.createElement("div");
           box.className = "decoded-box";
-          box.innerHTML = `<div class="decoded-label">Decoded Payload</div>${escHtml(data.msg)}`;
+          box.innerHTML = `<div class="decoded-sender">↓ Decoded Payload</div>${esc(data.msg)}`;
           s.appendChild(box);
           s.scrollTop = s.scrollHeight;
         }
@@ -714,8 +1063,8 @@
 
       socket.on("error", (d) => klog(`FATAL: ${d.message}`, "e"));
 
-      function escHtml(s) {
-        return s
+      function esc(s) {
+        return String(s)
           .replace(/&/g, "&amp;")
           .replace(/</g, "&lt;")
           .replace(/>/g, "&gt;");
@@ -730,7 +1079,6 @@
         s.appendChild(e);
         s.scrollTop = s.scrollHeight;
       }
-
       function clearStream() {
         document.getElementById("stream").innerHTML = "";
         klog("Stream cleared.");

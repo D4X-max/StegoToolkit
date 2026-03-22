@@ -9,7 +9,7 @@ from aes import encrypt_data, decrypt_data
 from stego.lsb import hide_lsb, extract_lsb, analyze_anomaly_with_heatmap, get_image_capacity, generate_visual_diff
 from pdf.pdf_crypto import hide_in_pdf, extract_from_pdf
 from text_stego import hide_text_in_text, extract_text_from_text
-from flask_socketio import SocketIO, emit
+from flask_socketio import SocketIO, emit, join_room, leave_room
 
 app = Flask(__name__)
 UPLOAD_FOLDER = 'uploads'
@@ -21,7 +21,7 @@ for folder in [UPLOAD_FOLDER, OUTPUT_FOLDER]:
     if not os.path.exists(folder):
         os.makedirs(folder)
 
-# ─── HELPERS ────────────────────────────────────────────────────────────────
+# ─── HELPERS ────────────────────────────────────────────────
 
 def safe_remove(*paths):
     for p in paths:
@@ -32,10 +32,9 @@ def safe_remove(*paths):
             pass
 
 def error_response(message, code=400):
-    """Standardised JSON error envelope."""
     return jsonify({"error": message}), code
 
-# ─── NAVIGATION ─────────────────────────────────────────────────────────────
+# ─── NAVIGATION ─────────────────────────────────────────────
 
 @app.route('/')
 def index():
@@ -49,7 +48,7 @@ def local_toolkit():
 def live_chat():
     return render_template('live.html')
 
-# ─── IMAGE STEGANOGRAPHY ─────────────────────────────────────────────────────
+# ─── IMAGE STEGANOGRAPHY ─────────────────────────────────────
 
 @app.route('/process/image', methods=['POST'])
 def process_image():
@@ -75,7 +74,6 @@ def process_image():
             text = request.form.get('text', '').strip()
             if not text:
                 return error_response("Payload text is required for encoding.")
-
             encrypted = encrypt_data(text, password)
             hide_lsb(filepath, encrypted, output_path, bit_depth=bit_depth)
             safe_remove(filepath)
@@ -84,16 +82,14 @@ def process_image():
         elif mode == 'extract':
             extracted_enc = extract_lsb(filepath, bit_depth=bit_depth)
             safe_remove(filepath)
-
             if extracted_enc == "No hidden data found.":
                 return jsonify({"result": extracted_enc})
-
             decrypted = decrypt_data(extracted_enc, password)
             return jsonify({"result": decrypted})
 
         else:
             safe_remove(filepath)
-            return error_response(f"Unknown mode '{mode}'. Use 'hide' or 'extract'.")
+            return error_response(f"Unknown mode '{mode}'.")
 
     except ValueError as e:
         safe_remove(filepath, output_path)
@@ -102,7 +98,7 @@ def process_image():
         safe_remove(filepath, output_path)
         return error_response(f"Unexpected error: {str(e)}", 500)
 
-# ─── ANOMALY DETECTION ───────────────────────────────────────────────────────
+# ─── ANOMALY DETECTION ───────────────────────────────────────
 
 @app.route('/process/detect', methods=['POST'])
 def handle_detection():
@@ -123,7 +119,7 @@ def handle_detection():
         safe_remove(filepath)
         return error_response(f"Detection failed: {str(e)}", 500)
 
-# ─── CAPACITY CHECK ──────────────────────────────────────────────────────────
+# ─── CAPACITY CHECK ──────────────────────────────────────────
 
 @app.route('/process/capacity', methods=['POST'])
 def check_capacity():
@@ -144,7 +140,7 @@ def check_capacity():
         safe_remove(filepath)
         return error_response(str(e), 500)
 
-# ─── VISUAL DIFF ─────────────────────────────────────────────────────────────
+# ─── VISUAL DIFF ─────────────────────────────────────────────
 
 @app.route('/process/diff', methods=['POST'])
 def visual_diff():
@@ -172,7 +168,94 @@ def visual_diff():
         safe_remove(orig_path, stego_path)
         return error_response(f"Diff generation failed: {str(e)}", 500)
 
-# ─── BATCH PROCESSING ────────────────────────────────────────────────────────
+# ─── EXIF METADATA STRIP ─────────────────────────────────────
+
+@app.route('/process/strip', methods=['POST'])
+def strip_metadata():
+    """
+    Strips ALL metadata (EXIF, GPS, ICC profile, comments) from an image
+    by re-encoding it through Pillow with no metadata attached.
+    Returns a clean PNG with only raw pixel data.
+    """
+    file = request.files.get('file')
+    if not file or file.filename == '':
+        return error_response("No file provided.")
+
+    filepath    = os.path.join(UPLOAD_FOLDER, "strip_" + file.filename)
+    output_path = os.path.join(OUTPUT_FOLDER,  "clean_" + os.path.splitext(file.filename)[0] + ".png")
+    file.save(filepath)
+
+    try:
+        # Open and immediately re-save via a clean pixel buffer — no metadata carried over
+        img = Image.open(filepath).convert("RGB")
+
+        # Collect original metadata stats before stripping
+        original_info = img.info  # dict of all metadata fields
+        exif_data     = img.getexif() if hasattr(img, 'getexif') else {}
+        fields_removed = len(original_info) + len(exif_data)
+
+        # Save as a fresh PNG with zero extra data
+        clean_img = Image.fromarray(__import__('numpy').array(img))
+        clean_img.save(output_path, format="PNG")
+
+        safe_remove(filepath)
+
+        original_size = os.path.getsize(filepath) if os.path.exists(filepath) else 0
+        clean_size    = os.path.getsize(output_path)
+
+        return send_file(
+            output_path,
+            as_attachment=True,
+            download_name=f"clean_{os.path.splitext(file.filename)[0]}.png",
+        )
+
+    except Exception as e:
+        safe_remove(filepath, output_path)
+        return error_response(f"Strip failed: {str(e)}", 500)
+
+
+@app.route('/process/strip_info', methods=['POST'])
+def strip_metadata_info():
+    """
+    Returns a JSON preview of what metadata WOULD be stripped,
+    without modifying or downloading anything.
+    """
+    file = request.files.get('file')
+    if not file or file.filename == '':
+        return error_response("No file provided.")
+
+    filepath = os.path.join(UPLOAD_FOLDER, "stripinfo_" + file.filename)
+    file.save(filepath)
+
+    try:
+        img  = Image.open(filepath)
+        info = img.info or {}
+
+        # Parse EXIF tag names if available
+        exif_fields = {}
+        try:
+            from PIL.ExifTags import TAGS
+            raw_exif = img.getexif()
+            exif_fields = {TAGS.get(k, str(k)): str(v)[:80] for k, v in raw_exif.items()}
+        except Exception:
+            pass
+
+        safe_remove(filepath)
+
+        return jsonify({
+            "format":       img.format or "Unknown",
+            "mode":         img.mode,
+            "size":         f"{img.width}×{img.height}",
+            "info_fields":  {k: str(v)[:80] for k, v in info.items()},
+            "exif_fields":  exif_fields,
+            "total_fields": len(info) + len(exif_fields),
+        })
+
+    except Exception as e:
+        safe_remove(filepath)
+        return error_response(f"Metadata read failed: {str(e)}", 500)
+
+# ─── BATCH PROCESSING ────────────────────────────────────────
 
 @app.route('/process/batch', methods=['POST'])
 def process_batch():
@@ -217,7 +300,7 @@ def process_batch():
         safe_remove(*temp_paths)
         return error_response(f"Batch processing failed: {str(e)}", 500)
 
-# ─── PDF PROCESSING ──────────────────────────────────────────────────────────
+# ─── PDF PROCESSING ──────────────────────────────────────────
 
 @app.route('/process/pdf', methods=['POST'])
 def process_pdf():
@@ -260,19 +343,62 @@ def process_pdf():
         safe_remove(filepath, output_path)
         return error_response(f"PDF processing failed: {str(e)}", 500)
 
-# ─── STATIC OUTPUT SERVING ───────────────────────────────────────────────────
+# ─── STATIC OUTPUT SERVING ───────────────────────────────────
 
 @app.route('/outputs/<path:filename>')
 def custom_static(filename):
     return send_from_directory(OUTPUT_FOLDER, filename)
 
-# ─── WEBSOCKET — LIVE CHAT ───────────────────────────────────────────────────
+# ─── WEBSOCKET — ROOM-BASED LIVE CHAT ────────────────────────
+
+@socketio.on('join_room')
+def handle_join(data):
+    """User joins a named room. Broadcasts join notice to room members."""
+    room     = data.get('room', '').strip().upper()
+    codename = data.get('codename', 'UNKNOWN')
+    if not room:
+        emit('error', {'message': 'Room code is required.'})
+        return
+
+    join_room(room)
+    emit('room_joined', {'room': room, 'codename': codename})
+    emit('room_event', {
+        'type':     'join',
+        'codename': codename,
+        'room':     room,
+        'message':  f"{codename} joined the channel."
+    }, to=room, include_self=False)
+
+
+@socketio.on('leave_room')
+def handle_leave(data):
+    room     = data.get('room', '').strip().upper()
+    codename = data.get('codename', 'UNKNOWN')
+    if room:
+        leave_room(room)
+        emit('room_event', {
+            'type':     'leave',
+            'codename': codename,
+            'room':     room,
+            'message':  f"{codename} left the channel."
+        }, to=room)
+
 
 @socketio.on('send_secure_msg')
 def handle_send(data):
-    """Receives {msg, password, carrier?, bit_depth?} → broadcasts stego image."""
+    """
+    Receives {msg, password, room, codename, carrier?, bit_depth?}
+    → Broadcasts stego image to everyone in the same room.
+    """
     try:
+        room      = data.get('room', '').strip().upper()
+        codename  = data.get('codename', 'GHOST')
         bit_depth = int(data.get('bit_depth', 1))
+
+        if not room:
+            emit('error', {'message': 'Must join a room before sending.'})
+            return
+
         encrypted_payload = encrypt_data(data['msg'], data['password'])
 
         if data.get('carrier'):
@@ -291,9 +417,13 @@ def handle_send(data):
 
         img_b64 = base64.b64encode(buf.read()).decode('utf-8')
 
-        emit('sent_confirmation', {'status': 'SUCCESS'})
-        emit('new_stego_packet',  {'image': img_b64, 'bit_depth': bit_depth},
-             broadcast=True, include_self=False)
+        emit('sent_confirmation', {'status': 'SUCCESS', 'room': room})
+        emit('new_stego_packet', {
+            'image':     img_b64,
+            'bit_depth': bit_depth,
+            'codename':  codename,
+            'room':      room,
+        }, to=room, include_self=False)
 
     except Exception as e:
         emit('error', {'message': str(e)})
@@ -303,13 +433,11 @@ def handle_send(data):
 def handle_decrypt(data):
     """Receives {image_b64, password, bit_depth?} → returns decrypted text."""
     try:
-        bit_depth  = int(data.get('bit_depth', 1))
-        img_data   = base64.b64decode(data['image'])
-        img_buf    = BytesIO(img_data)
-
-        extracted_enc  = extract_lsb(img_buf, bit_depth=bit_depth)
-        decrypted_text = decrypt_data(extracted_enc, data['password'])
-        emit('decrypted_result', {'msg': decrypted_text})
+        bit_depth     = int(data.get('bit_depth', 1))
+        img_data      = base64.b64decode(data['image'])
+        extracted_enc = extract_lsb(BytesIO(img_data), bit_depth=bit_depth)
+        decrypted     = decrypt_data(extracted_enc, data['password'])
+        emit('decrypted_result', {'msg': decrypted})
 
     except ValueError as e:
         emit('decrypted_result', {'msg': f"DECRYPTION_FAILED: {str(e)}"})

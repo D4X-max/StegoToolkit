@@ -16,18 +16,19 @@
     <style>
       :root {
         --bg: #07090f;
-        --surface: #0d1117;
+        --srf: #0d1117;
         --s2: #111827;
-        --border: #1c2333;
-        --border2: #253045;
+        --bdr: #1c2333;
+        --bdr2: #253045;
+        --faint: #1a2332;
         --cyan: #00f5ff;
         --violet: #bf5af2;
         --green: #30d158;
         --orange: #ff9f0a;
         --red: #ff453a;
+        --teal: #2dd4bf;
         --text: #e8edf5;
         --sub: #6b7c93;
-        --faint: #1a2332;
       }
       *,
       *::before,
@@ -39,12 +40,6 @@
       html {
         scroll-behavior: smooth;
       }
-
-      /* FIX 1: .hidden must be defined */
-      .hidden {
-        display: none !important;
-      }
-
       body {
         font-family: "DM Sans", sans-serif;
         background: var(--bg);
@@ -61,11 +56,10 @@
           0deg,
           transparent,
           transparent 3px,
-          rgba(0, 0, 0, 0.06) 3px,
-          rgba(0, 0, 0, 0.06) 4px
+          rgba(0, 0, 0, 0.05) 3px,
+          rgba(0, 0, 0, 0.05) 4px
         );
       }
-
       ::-webkit-scrollbar {
         width: 4px;
       }
@@ -73,11 +67,13 @@
         background: transparent;
       }
       ::-webkit-scrollbar-thumb {
-        background: var(--border2);
+        background: var(--bdr2);
         border-radius: 4px;
       }
+      .hidden {
+        display: none !important;
+      }
 
-      /* ── NAV ── */
       nav {
         position: sticky;
         top: 0;
@@ -88,7 +84,7 @@
         padding: 14px 40px;
         background: rgba(7, 9, 15, 0.92);
         backdrop-filter: blur(24px);
-        border-bottom: 1px solid var(--border);
+        border-bottom: 1px solid var(--bdr);
       }
       .logo {
         display: flex;
@@ -118,6 +114,11 @@
         color: var(--cyan);
         font-style: normal;
       }
+      .nav-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
       .nav-badge {
         font-family: "DM Mono", monospace;
         font-size: 9px;
@@ -125,8 +126,40 @@
         letter-spacing: 0.12em;
         text-transform: uppercase;
       }
+      .hist-btn {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        color: var(--sub);
+        background: var(--srf);
+        border: 1px solid var(--bdr);
+        border-radius: 8px;
+        padding: 7px 14px;
+        cursor: pointer;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        transition: all 0.2s;
+      }
+      .hist-btn:hover {
+        color: var(--text);
+        border-color: var(--bdr2);
+      }
+      .hist-btn.active {
+        color: var(--orange);
+        border-color: rgba(255, 159, 10, 0.4);
+        background: rgba(255, 159, 10, 0.06);
+      }
+      .hbadge {
+        background: var(--orange);
+        color: #000;
+        border-radius: 100px;
+        padding: 1px 7px;
+        font-size: 9px;
+        font-weight: 700;
+      }
 
-      /* ── LAYOUT ── */
       .layout {
         position: relative;
         z-index: 1;
@@ -139,13 +172,12 @@
         align-items: start;
       }
 
-      /* ── TAB BAR ── */
       .tab-bar {
         display: flex;
         gap: 3px;
         margin-bottom: 20px;
-        background: var(--surface);
-        border: 1px solid var(--border);
+        background: var(--srf);
+        border: 1px solid var(--bdr);
         border-radius: 16px;
         padding: 5px;
         overflow-x: auto;
@@ -154,9 +186,9 @@
         display: flex;
         align-items: center;
         gap: 8px;
-        padding: 10px 18px;
+        padding: 10px 16px;
         border-radius: 12px;
-        border: 1px solid transparent;
+        border: none;
         background: transparent;
         color: var(--sub);
         font-family: "DM Sans", sans-serif;
@@ -165,7 +197,6 @@
         cursor: pointer;
         white-space: nowrap;
         transition: all 0.2s;
-        letter-spacing: 0.01em;
       }
       .tab-btn:hover {
         color: var(--text);
@@ -174,7 +205,7 @@
       .tab-btn.active {
         background: var(--faint);
         color: #fff;
-        border-color: var(--border2);
+        border: 1px solid var(--bdr2);
       }
       .tab-btn.active .tdot {
         opacity: 1;
@@ -190,16 +221,15 @@
         flex-shrink: 0;
       }
 
-      /* ── PANEL ── */
       .panel {
-        background: var(--surface);
-        border: 1px solid var(--border);
+        background: var(--srf);
+        border: 1px solid var(--bdr);
         border-radius: 20px;
         overflow: hidden;
       }
       .panel-header {
         padding: 22px 28px;
-        border-bottom: 1px solid var(--border);
+        border-bottom: 1px solid var(--bdr);
         display: flex;
         align-items: center;
         gap: 14px;
@@ -228,45 +258,36 @@
         text-transform: uppercase;
         margin-top: 2px;
       }
-
-      /* FIX 2: panel-body is plain padding only — forms handle their own layout */
       .panel-body {
         padding: 28px;
-      }
-
-      /* FIX 3: form stack — all forms use this for consistent vertical spacing */
-      .form-stack {
         display: flex;
         flex-direction: column;
         gap: 18px;
       }
 
-      /* ── FIELDS ── */
       .field {
         display: flex;
         flex-direction: column;
         gap: 8px;
       }
-      .field-label {
+      .fl {
         font-family: "DM Mono", monospace;
         font-size: 10px;
         letter-spacing: 0.18em;
         color: var(--sub);
         text-transform: uppercase;
       }
-
       input[type="password"],
       textarea,
       select {
         width: 100%;
         background: var(--s2);
-        border: 1px solid var(--border2);
+        border: 1px solid var(--bdr2);
         border-radius: 11px;
         padding: 12px 16px;
         color: var(--text);
         font-family: "DM Sans", sans-serif;
         font-size: 14px;
-        font-weight: 400;
         outline: none;
         transition:
           border-color 0.2s,
@@ -282,13 +303,12 @@
       input[type="file"] {
         width: 100%;
         background: var(--s2);
-        border: 1px dashed var(--border2);
+        border: 1px dashed var(--bdr2);
         border-radius: 11px;
         padding: 22px 16px;
         color: var(--sub);
         font-family: "DM Mono", monospace;
         font-size: 11px;
-        letter-spacing: 0.05em;
         cursor: pointer;
         transition: all 0.2s;
         text-align: center;
@@ -305,7 +325,6 @@
         background: var(--s2);
       }
 
-      /* ── TOGGLE BUTTONS ── */
       .tgl-group {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -314,7 +333,7 @@
       .tgl-btn {
         padding: 11px;
         border-radius: 11px;
-        border: 1px solid var(--border2);
+        border: 1px solid var(--bdr2);
         background: transparent;
         color: var(--sub);
         font-family: "DM Mono", monospace;
@@ -331,7 +350,7 @@
       }
       .tgl-btn:hover {
         color: var(--text);
-        border-color: var(--border);
+        border-color: var(--bdr);
       }
       .tgl-btn.a-cyan {
         border-color: var(--cyan);
@@ -344,7 +363,6 @@
         color: var(--green);
       }
 
-      /* ── BIT DEPTH ── */
       .depth-row {
         display: flex;
         gap: 8px;
@@ -353,7 +371,7 @@
         flex: 1;
         padding: 10px 8px;
         border-radius: 11px;
-        border: 1px solid var(--border2);
+        border: 1px solid var(--bdr2);
         background: transparent;
         color: var(--sub);
         font-family: "DM Mono", monospace;
@@ -365,33 +383,25 @@
       }
       .depth-btn:hover {
         color: var(--text);
-        border-color: var(--border);
+        border-color: var(--bdr);
       }
       .depth-btn.active {
         border-color: var(--cyan);
         background: rgba(0, 245, 255, 0.08);
         color: var(--cyan);
       }
-      .depth-sub {
+      .dsub {
         font-size: 9px;
         opacity: 0.5;
         display: block;
         margin-top: 1px;
       }
 
-      /* ── CAPACITY BAR ── */
-      /* FIX 4: cap-wrap needs its own flex column */
-      .cap-wrap {
-        display: flex;
-        flex-direction: column;
-        gap: 5px;
-      }
       .cap-row {
         display: flex;
         justify-content: space-between;
-        align-items: center;
       }
-      .cap-label {
+      .cap-lbl {
         font-family: "DM Mono", monospace;
         font-size: 9px;
         color: var(--sub);
@@ -419,7 +429,6 @@
         background: var(--cyan);
       }
 
-      /* ── SUBMIT BUTTON ── */
       .sub-btn {
         width: 100%;
         padding: 15px;
@@ -435,7 +444,7 @@
           box-shadow 0.2s;
       }
       .sub-btn:hover {
-        opacity: 0.88;
+        opacity: 0.9;
       }
       .sub-btn:active {
         transform: scale(0.99);
@@ -464,28 +473,36 @@
         color: #fff;
         box-shadow: 0 4px 24px rgba(255, 159, 10, 0.2);
       }
+      .btn-teal {
+        background: linear-gradient(135deg, #0d7f74, #2dd4bf);
+        color: #000;
+        font-weight: 700;
+        box-shadow: 0 4px 24px rgba(45, 212, 191, 0.2);
+      }
       .btn-cyan:hover {
-        box-shadow: 0 4px 40px rgba(0, 245, 255, 0.4);
+        box-shadow: 0 4px 40px rgba(0, 245, 255, 0.35);
       }
       .btn-violet:hover {
-        box-shadow: 0 4px 40px rgba(191, 90, 242, 0.4);
+        box-shadow: 0 4px 40px rgba(191, 90, 242, 0.35);
       }
       .btn-red:hover {
-        box-shadow: 0 4px 40px rgba(255, 69, 58, 0.4);
+        box-shadow: 0 4px 40px rgba(255, 69, 58, 0.35);
       }
       .btn-orange:hover {
-        box-shadow: 0 4px 40px rgba(255, 159, 10, 0.4);
+        box-shadow: 0 4px 40px rgba(255, 159, 10, 0.35);
+      }
+      .btn-teal:hover {
+        box-shadow: 0 4px 40px rgba(45, 212, 191, 0.35);
       }
 
-      /* ── DETECT OUTPUT ── */
       .threat-block {
         background: var(--s2);
-        border: 1px solid var(--border2);
+        border: 1px solid var(--bdr2);
         border-radius: 14px;
         padding: 22px;
         margin-top: 20px;
       }
-      .threat-header {
+      .threat-hd {
         display: flex;
         justify-content: space-between;
         align-items: flex-end;
@@ -525,7 +542,6 @@
         margin-top: 12px;
       }
 
-      /* ── DIFF STATS ── */
       .stat-row {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
@@ -533,7 +549,7 @@
       }
       .stat-box {
         background: var(--s2);
-        border: 1px solid var(--border2);
+        border: 1px solid var(--bdr2);
         border-radius: 12px;
         padding: 16px 12px;
         text-align: center;
@@ -554,12 +570,11 @@
         margin-top: 4px;
       }
 
-      /* ── IMAGE PREVIEW ── */
       .img-block {
-        border: 1px solid var(--border2);
+        border: 1px solid var(--bdr2);
         border-radius: 12px;
         overflow: hidden;
-        margin-top: 16px;
+        margin-top: 14px;
       }
       .img-hd {
         font-family: "DM Mono", monospace;
@@ -568,14 +583,88 @@
         letter-spacing: 0.15em;
         text-transform: uppercase;
         padding: 9px 14px;
-        border-bottom: 1px solid var(--border2);
+        border-bottom: 1px solid var(--bdr2);
         background: var(--s2);
         display: flex;
         justify-content: space-between;
         align-items: center;
       }
 
-      /* ── RESULT BOX ── */
+      /* EXIF */
+      .meta-wrap {
+        background: var(--s2);
+        border: 1px solid var(--bdr2);
+        border-radius: 14px;
+        overflow: hidden;
+        margin-top: 4px;
+      }
+      .meta-hd {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 14px 18px;
+        border-bottom: 1px solid var(--bdr2);
+      }
+      .meta-hd-title {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 16px;
+        letter-spacing: 0.08em;
+      }
+      .meta-badge {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        padding: 3px 10px;
+        border-radius: 100px;
+        letter-spacing: 0.1em;
+      }
+      .mbad-dirty {
+        background: rgba(255, 69, 58, 0.1);
+        border: 1px solid rgba(255, 69, 58, 0.3);
+        color: var(--red);
+      }
+      .mbad-clean {
+        background: rgba(48, 209, 88, 0.1);
+        border: 1px solid rgba(48, 209, 88, 0.3);
+        color: var(--green);
+      }
+      .meta-table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      .meta-table th,
+      .meta-table td {
+        padding: 8px 14px;
+        text-align: left;
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        border-bottom: 1px solid var(--bdr);
+      }
+      .meta-table th {
+        color: var(--sub);
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-size: 9px;
+        background: rgba(255, 255, 255, 0.02);
+      }
+      .meta-table td:first-child {
+        color: var(--teal);
+        width: 38%;
+      }
+      .meta-table td:last-child {
+        color: var(--text);
+        word-break: break-all;
+      }
+      .meta-table tr:last-child td {
+        border-bottom: none;
+      }
+      .meta-none {
+        font-family: "DM Mono", monospace;
+        font-size: 11px;
+        color: var(--green);
+        padding: 20px;
+        text-align: center;
+      }
+
       .result-block {
         background: rgba(0, 245, 255, 0.04);
         border: 1px solid rgba(0, 245, 255, 0.2);
@@ -591,7 +680,6 @@
         text-transform: uppercase;
         display: flex;
         justify-content: space-between;
-        align-items: center;
         margin-bottom: 10px;
       }
       .result-txt {
@@ -611,24 +699,22 @@
         letter-spacing: 0.1em;
         transition: opacity 0.2s;
         padding: 0;
-        text-transform: uppercase;
       }
       .copy-btn:hover {
         opacity: 0.6;
       }
 
-      /* ── SIDEBAR ── */
       .sidebar {
-        background: var(--surface);
-        border: 1px solid var(--border);
+        background: var(--srf);
+        border: 1px solid var(--bdr);
         border-radius: 20px;
         overflow: hidden;
         position: sticky;
         top: 72px;
       }
-      .sb-header {
+      .sb-hd {
         padding: 15px 20px;
-        border-bottom: 1px solid var(--border);
+        border-bottom: 1px solid var(--bdr);
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -654,7 +740,7 @@
         color: var(--text);
       }
       #console {
-        height: 380px;
+        height: 340px;
         overflow-y: auto;
         padding: 14px 18px;
         display: flex;
@@ -669,7 +755,7 @@
         line-height: 1.5;
       }
       .log-ts {
-        color: var(--border2);
+        color: var(--bdr2);
         flex-shrink: 0;
       }
       .c-i {
@@ -682,7 +768,176 @@
         color: var(--red);
       }
 
-      /* ── TOAST ── */
+      /* HISTORY SLIDE PANEL */
+      #histPanel {
+        position: fixed;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        width: 420px;
+        z-index: 50;
+        background: var(--srf);
+        border-left: 1px solid var(--bdr);
+        display: flex;
+        flex-direction: column;
+        transform: translateX(100%);
+        transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: -20px 0 60px rgba(0, 0, 0, 0.5);
+      }
+      #histPanel.open {
+        transform: translateX(0);
+      }
+      .hist-hd {
+        padding: 20px 24px;
+        border-bottom: 1px solid var(--bdr);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-shrink: 0;
+      }
+      .hist-title {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 22px;
+        letter-spacing: 0.08em;
+        color: var(--orange);
+      }
+      .hist-acts {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .hist-count {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        background: rgba(255, 159, 10, 0.1);
+        border: 1px solid rgba(255, 159, 10, 0.25);
+        color: var(--orange);
+        border-radius: 6px;
+        padding: 3px 10px;
+      }
+      .hist-exp-btn {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        color: var(--sub);
+        background: var(--s2);
+        border: 1px solid var(--bdr2);
+        border-radius: 7px;
+        padding: 5px 12px;
+        cursor: pointer;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        transition: all 0.2s;
+      }
+      .hist-exp-btn:hover {
+        color: var(--orange);
+        border-color: rgba(255, 159, 10, 0.3);
+      }
+      .hist-clr-btn {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        color: var(--sub);
+        background: none;
+        border: none;
+        cursor: pointer;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        transition: color 0.2s;
+      }
+      .hist-clr-btn:hover {
+        color: var(--red);
+      }
+      .hist-close {
+        background: none;
+        border: none;
+        cursor: pointer;
+        color: var(--sub);
+        font-size: 18px;
+        transition: color 0.2s;
+        line-height: 1;
+      }
+      .hist-close:hover {
+        color: var(--text);
+      }
+      #histList {
+        flex: 1;
+        overflow-y: auto;
+        padding: 16px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .hist-empty {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100%;
+        gap: 14px;
+        opacity: 0.25;
+      }
+      .hist-empty-icon {
+        font-size: 40px;
+      }
+      .hist-empty-txt {
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        color: var(--sub);
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+      }
+      .hist-entry {
+        background: var(--s2);
+        border: 1px solid var(--bdr2);
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+        animation: sR 0.25s ease-out;
+      }
+      @keyframes sR {
+        from {
+          opacity: 0;
+          transform: translateX(10px);
+        }
+        to {
+          opacity: 1;
+          transform: none;
+        }
+      }
+      .hdot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        margin-top: 5px;
+      }
+      .hbody {
+        flex: 1;
+        min-width: 0;
+      }
+      .hop {
+        font-family: "Bebas Neue", sans-serif;
+        font-size: 16px;
+        letter-spacing: 0.06em;
+      }
+      .hdetail {
+        font-family: "DM Mono", monospace;
+        font-size: 10px;
+        color: var(--sub);
+        margin-top: 3px;
+        line-height: 1.5;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .htime {
+        font-family: "DM Mono", monospace;
+        font-size: 9px;
+        color: var(--sub);
+        flex-shrink: 0;
+      }
+
       #toast {
         position: fixed;
         bottom: 28px;
@@ -724,18 +979,43 @@
   <body>
     <div id="toast"></div>
 
+    <!-- HISTORY PANEL -->
+    <div id="histPanel">
+      <div class="hist-hd">
+        <span class="hist-title">Operation History</span>
+        <div class="hist-acts">
+          <span id="histCount" class="hist-count">0 ops</span>
+          <button class="hist-exp-btn" onclick="exportHistory()">
+            ↓ Export JSON
+          </button>
+          <button class="hist-clr-btn" onclick="clearHistory()">Clear</button>
+          <button class="hist-close" onclick="toggleHistory()">✕</button>
+        </div>
+      </div>
+      <div id="histList">
+        <div class="hist-empty" id="histEmpty">
+          <div class="hist-empty-icon">📋</div>
+          <div class="hist-empty-txt">No operations yet</div>
+        </div>
+      </div>
+    </div>
+
     <nav>
-      <a href="/" class="logo">
-        <div class="logo-box"><i class="fas fa-user-secret"></i></div>
-        <span class="logo-name">Stego<em>Toolkit</em></span>
-      </a>
-      <span class="nav-badge">v2.2.0 · HMAC Active</span>
+      <a href="/" class="logo"
+        ><div class="logo-box"><i class="fas fa-user-secret"></i></div>
+        <span class="logo-name">Stego<em>Toolkit</em></span></a
+      >
+      <div class="nav-right">
+        <span class="nav-badge">v2.3.0 · HMAC Active</span>
+        <button class="hist-btn" id="histToggle" onclick="toggleHistory()">
+          <i class="fas fa-history"></i> History
+          <span id="hbadge" class="hbadge" style="display: none"></span>
+        </button>
+      </div>
     </nav>
 
     <div class="layout">
-      <!-- MAIN COLUMN -->
       <div>
-        <!-- TAB BAR -->
         <div class="tab-bar">
           <button
             class="tab-btn active"
@@ -762,9 +1042,13 @@
             <div class="tdot" style="background: #c084fc"></div>
             <i class="fas fa-not-equal" style="font-size: 12px"></i> Visual Diff
           </button>
+          <button class="tab-btn" onclick="switchTab('strip')" id="tab-strip">
+            <div class="tdot" style="background: var(--teal)"></div>
+            <i class="fas fa-eraser" style="font-size: 12px"></i> EXIF Strip
+          </button>
         </div>
 
-        <!-- ══ SINGLE IMAGE ══ -->
+        <!-- SINGLE IMAGE -->
         <div id="section-single" class="panel">
           <div class="panel-header">
             <div
@@ -783,13 +1067,11 @@
             </div>
           </div>
           <div class="panel-body">
-            <!-- FIX: hidden inputs are outside the form-stack; submit btn is INSIDE the form -->
-            <form id="imageForm" class="form-stack">
+            <form id="imageForm">
               <input type="hidden" name="mode" id="imgMode" value="hide" />
               <input type="hidden" name="bit_depth" id="depthVal" value="1" />
-
-              <div class="field">
-                <div class="field-label">Operation Mode</div>
+              <div class="field" style="margin-bottom: 2px">
+                <div class="fl">Operation Mode</div>
                 <div class="tgl-group">
                   <button
                     type="button"
@@ -797,9 +1079,8 @@
                     id="btn-hide"
                     class="tgl-btn a-cyan"
                   >
-                    <i class="fas fa-arrow-up"></i> Encode
-                  </button>
-                  <button
+                    <i class="fas fa-arrow-up"></i> Encode</button
+                  ><button
                     type="button"
                     onclick="setMode('extract')"
                     id="btn-extract"
@@ -809,9 +1090,8 @@
                   </button>
                 </div>
               </div>
-
               <div class="field">
-                <div class="field-label">Carrier Image (PNG / BMP)</div>
+                <div class="fl">Carrier Image (PNG / BMP)</div>
                 <input
                   type="file"
                   id="imgFile"
@@ -819,57 +1099,51 @@
                   accept="image/png,image/bmp"
                   required
                 />
-                <!-- Capacity bar: hidden until file loaded -->
-                <div id="capWrap" class="cap-wrap hidden">
+                <div id="capWrap" class="hidden">
                   <div class="cap-row">
-                    <span class="cap-label">Capacity</span>
-                    <span id="capTxt" class="cap-val">0 / 0 B</span>
+                    <span class="cap-lbl">Capacity</span
+                    ><span id="capTxt" class="cap-val">0 / 0 B</span>
                   </div>
                   <div class="cap-track">
                     <div id="capFill" class="cap-fill"></div>
                   </div>
                 </div>
               </div>
-
               <div id="depthGroup" class="field">
-                <div class="field-label">LSB Bit Depth</div>
+                <div class="fl">LSB Bit Depth</div>
                 <div class="depth-row">
                   <button
                     type="button"
                     class="depth-btn active"
                     onclick="setDepth(1, this)"
                   >
-                    1-bit<span class="depth-sub">Subtle</span>
-                  </button>
-                  <button
+                    1-bit<span class="dsub">Subtle</span></button
+                  ><button
                     type="button"
                     class="depth-btn"
                     onclick="setDepth(2, this)"
                   >
-                    2-bit<span class="depth-sub">Balanced</span>
-                  </button>
-                  <button
+                    2-bit<span class="dsub">Balanced</span></button
+                  ><button
                     type="button"
                     class="depth-btn"
                     onclick="setDepth(3, this)"
                   >
-                    3-bit<span class="depth-sub">High Cap</span>
+                    3-bit<span class="dsub">High Cap</span>
                   </button>
                 </div>
               </div>
-
               <div class="field">
-                <div class="field-label">Passphrase</div>
+                <div class="fl">Passphrase</div>
                 <input
                   type="password"
                   name="password"
-                  placeholder="Enter AES-256 passphrase…"
+                  placeholder="AES-256 passphrase…"
                   required
                 />
               </div>
-
               <div id="payloadField" class="field">
-                <div class="field-label">Payload</div>
+                <div class="fl">Payload</div>
                 <textarea
                   name="text"
                   id="payloadText"
@@ -877,16 +1151,18 @@
                   placeholder="Secret message to encode…"
                 ></textarea>
               </div>
-
-              <!-- FIX: submit is the ONLY submit-type button in this form -->
-              <button type="submit" class="sub-btn btn-cyan">
+              <button
+                type="submit"
+                class="sub-btn btn-cyan"
+                style="margin-top: 4px"
+              >
                 Execute Protocol
               </button>
             </form>
           </div>
         </div>
 
-        <!-- ══ BATCH ══ -->
+        <!-- BATCH -->
         <div id="section-batch" class="panel hidden">
           <div class="panel-header">
             <div
@@ -901,15 +1177,13 @@
             </div>
             <div>
               <div class="ph-title">Batch Pipeline</div>
-              <div class="ph-sub">
-                Encode the same payload into multiple images
-              </div>
+              <div class="ph-sub">Encode same payload into multiple images</div>
             </div>
           </div>
           <div class="panel-body">
-            <form id="batchForm" class="form-stack">
+            <form id="batchForm">
               <div class="field">
-                <div class="field-label">Images (PNG / BMP)</div>
+                <div class="fl">Images</div>
                 <input
                   type="file"
                   name="files"
@@ -919,7 +1193,7 @@
                 />
               </div>
               <div class="field">
-                <div class="field-label">Passphrase</div>
+                <div class="fl">Passphrase</div>
                 <input
                   type="password"
                   name="password"
@@ -928,7 +1202,7 @@
                 />
               </div>
               <div class="field">
-                <div class="field-label">Universal Payload</div>
+                <div class="fl">Universal Payload</div>
                 <textarea
                   name="text"
                   rows="4"
@@ -936,14 +1210,18 @@
                 ></textarea>
               </div>
               <input type="hidden" name="bit_depth" value="1" />
-              <button type="submit" class="sub-btn btn-violet">
+              <button
+                type="submit"
+                class="sub-btn btn-violet"
+                style="margin-top: 4px"
+              >
                 Start Batch Encoding
               </button>
             </form>
           </div>
         </div>
 
-        <!-- ══ PDF ══ -->
+        <!-- PDF -->
         <div id="section-pdf" class="panel hidden">
           <div class="panel-header">
             <div
@@ -962,20 +1240,16 @@
             </div>
           </div>
           <div class="panel-body">
-            <form id="pdfForm" class="form-stack">
+            <form id="pdfForm">
               <div class="field">
-                <div class="field-label">Operation</div>
-                <select
-                  name="mode"
-                  id="pdfMode"
-                  onchange="togglePdfPayload(this)"
-                >
+                <div class="fl">Operation</div>
+                <select name="mode">
                   <option value="hide">Inject Secret</option>
                   <option value="extract">Extract Secret</option>
                 </select>
               </div>
               <div class="field">
-                <div class="field-label">PDF Document</div>
+                <div class="fl">PDF Document</div>
                 <input
                   type="file"
                   name="file"
@@ -984,7 +1258,7 @@
                 />
               </div>
               <div class="field">
-                <div class="field-label">Passphrase</div>
+                <div class="fl">Passphrase</div>
                 <input
                   type="password"
                   name="password"
@@ -992,22 +1266,26 @@
                   required
                 />
               </div>
-              <div id="pdfPayloadField" class="field">
-                <div class="field-label">Payload</div>
+              <div class="field">
+                <div class="fl">Payload</div>
                 <textarea
                   name="text"
                   rows="4"
                   placeholder="Secret to inject…"
                 ></textarea>
               </div>
-              <button type="submit" class="sub-btn btn-red">
+              <button
+                type="submit"
+                class="sub-btn btn-red"
+                style="margin-top: 4px"
+              >
                 Process Document
               </button>
             </form>
           </div>
         </div>
 
-        <!-- ══ ANOMALY DETECT ══ -->
+        <!-- DETECT -->
         <div id="section-detect" class="panel hidden">
           <div class="panel-header">
             <div
@@ -1026,9 +1304,9 @@
             </div>
           </div>
           <div class="panel-body">
-            <form id="detectForm" class="form-stack">
+            <form id="detectForm">
               <div class="field">
-                <div class="field-label">Target Image</div>
+                <div class="fl">Target Image</div>
                 <input
                   type="file"
                   name="file"
@@ -1036,15 +1314,17 @@
                   required
                 />
               </div>
-              <button type="submit" class="sub-btn btn-red">
+              <button
+                type="submit"
+                class="sub-btn btn-red"
+                style="margin-top: 4px"
+              >
                 Scan for Hidden Payload
               </button>
             </form>
-
-            <!-- Output: outside the form, shown after response -->
             <div id="detectOut" class="hidden">
               <div class="threat-block">
-                <div class="threat-header">
+                <div class="threat-hd">
                   <div class="threat-lbl">Threat Assessment</div>
                   <div id="threatVal" class="threat-val">—</div>
                 </div>
@@ -1063,14 +1343,13 @@
                   id="heatmapImg"
                   src=""
                   style="width: 100%; display: block"
-                  alt="Heatmap"
                 />
               </div>
             </div>
           </div>
         </div>
 
-        <!-- ══ VISUAL DIFF ══ -->
+        <!-- DIFF -->
         <div id="section-diff" class="panel hidden">
           <div class="panel-header">
             <div
@@ -1097,18 +1376,22 @@
                 font-size: 11px;
                 color: var(--sub);
                 line-height: 1.7;
-                margin-bottom: 20px;
               "
             >
-              Compare original vs stego image. LSB changes are amplified ×20 to
-              be visually detectable.
+              Compare original vs stego image. Pixel differences amplified ×20
+              to reveal LSB changes.
             </p>
-            <form id="diffForm" class="form-stack">
+            <form id="diffForm">
               <div
-                style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px"
+                style="
+                  display: grid;
+                  grid-template-columns: 1fr 1fr;
+                  gap: 12px;
+                  margin-bottom: 18px;
+                "
               >
                 <div class="field">
-                  <div class="field-label">Original Image</div>
+                  <div class="fl">Original</div>
                   <input
                     type="file"
                     name="original"
@@ -1117,7 +1400,7 @@
                   />
                 </div>
                 <div class="field">
-                  <div class="field-label">Stego Image</div>
+                  <div class="fl">Stego</div>
                   <input
                     type="file"
                     name="stego"
@@ -1130,12 +1413,8 @@
                 Generate Diff
               </button>
             </form>
-
-            <div id="diffOut" class="hidden">
-              <div
-                class="stat-row"
-                style="margin-top: 20px; margin-bottom: 14px"
-              >
+            <div id="diffOut" class="hidden" style="margin-top: 20px">
+              <div class="stat-row" style="margin-bottom: 14px">
                 <div class="stat-box">
                   <div id="dPx" class="stat-n">—</div>
                   <div class="stat-l">Changed Px</div>
@@ -1151,8 +1430,8 @@
               </div>
               <div class="img-block">
                 <div class="img-hd">
-                  <span>Amplified Diff Map (×20)</span>
-                  <a
+                  <span>Amplified Diff Map</span
+                  ><a
                     id="diffDL"
                     href="#"
                     download="diff.png"
@@ -1164,38 +1443,103 @@
                     >↓ Save</a
                   >
                 </div>
-                <img
-                  id="diffImg"
-                  src=""
-                  style="width: 100%; display: block"
-                  alt="Diff"
-                />
+                <img id="diffImg" src="" style="width: 100%; display: block" />
               </div>
             </div>
           </div>
         </div>
+
+        <!-- EXIF STRIP -->
+        <div id="section-strip" class="panel hidden">
+          <div class="panel-header">
+            <div
+              class="ph-icon"
+              style="
+                background: rgba(45, 212, 191, 0.1);
+                color: var(--teal);
+                box-shadow: 0 0 16px rgba(45, 212, 191, 0.12);
+              "
+            >
+              <i class="fas fa-eraser"></i>
+            </div>
+            <div>
+              <div class="ph-title">EXIF Metadata Stripper</div>
+              <div class="ph-sub">
+                Remove GPS · camera · timestamps · all hidden fields
+              </div>
+            </div>
+          </div>
+          <div class="panel-body">
+            <p
+              style="
+                font-family: &quot;DM Mono&quot;, monospace;
+                font-size: 11px;
+                color: var(--sub);
+                line-height: 1.7;
+              "
+            >
+              Upload an image to preview its embedded metadata, then download a
+              clean PNG with zero metadata — no location, device, or timestamp
+              trails left behind.
+            </p>
+            <div class="field">
+              <div class="fl">Image File</div>
+              <input type="file" id="stripFile" accept="image/*" />
+            </div>
+
+            <div id="metaPreview" class="hidden">
+              <div class="meta-wrap">
+                <div class="meta-hd">
+                  <span class="meta-hd-title" style="color: var(--text)"
+                    >Detected Metadata</span
+                  ><span id="metaBadge" class="meta-badge mbad-dirty">—</span>
+                </div>
+                <div
+                  id="metaBody"
+                  style="max-height: 240px; overflow-y: auto"
+                ></div>
+              </div>
+            </div>
+
+            <form id="stripForm">
+              <input
+                type="file"
+                name="file"
+                id="stripHiddenFile"
+                style="display: none"
+              />
+              <button
+                type="submit"
+                id="stripBtn"
+                class="sub-btn btn-teal"
+                disabled
+              >
+                <i class="fas fa-eraser" style="margin-right: 8px"></i>Strip All
+                Metadata &amp; Download
+              </button>
+            </form>
+          </div>
+        </div>
       </div>
-      <!-- /main column -->
 
       <!-- SIDEBAR -->
       <div>
         <div class="sidebar">
-          <div class="sb-header">
-            <span class="sb-title">Kernel Stream</span>
-            <button class="sb-clr" onclick="clearLog()">Clear</button>
+          <div class="sb-hd">
+            <span class="sb-title">Kernel Stream</span
+            ><button class="sb-clr" onclick="clearLog()">Clear</button>
           </div>
           <div id="console">
             <div class="log-e">
-              <span class="log-ts">--:--:--</span>
-              <span class="c-i">StegoToolkit ready.</span>
+              <span class="log-ts">--:--:--</span
+              ><span class="c-i">StegoToolkit v2.3 ready.</span>
             </div>
           </div>
-          <!-- Extracted payload shown here after decode -->
           <div id="resultWrap" class="hidden" style="padding: 0 18px 18px">
             <div class="result-block">
               <div class="result-hd">
-                <span>Extracted Payload</span>
-                <button class="copy-btn" onclick="copyResult()">Copy</button>
+                <span>Extracted Payload</span
+                ><button class="copy-btn" onclick="copyResult()">Copy</button>
               </div>
               <div id="resultTxt" class="result-txt"></div>
             </div>
@@ -1203,45 +1547,130 @@
         </div>
       </div>
     </div>
-    <!-- /layout -->
 
     <script>
       let maxB = 0,
-        curDepth = 1;
-      const ALL_TABS = ["single", "batch", "pdf", "detect", "diff"];
+        curDepth = 1,
+        histOpen = false;
+      const TABS = ["single", "batch", "pdf", "detect", "diff", "strip"];
+      const HIST_KEY = "stego_history_v2";
 
-      /* ── TAB SWITCHING ─────────────────────────────────────── */
-      function switchTab(tab) {
-        ALL_TABS.forEach((t) => {
-          document.getElementById("section-" + t).classList.add("hidden");
-          document.getElementById("tab-" + t).classList.remove("active");
-        });
-        document.getElementById("section-" + tab).classList.remove("hidden");
-        document.getElementById("tab-" + tab).classList.add("active");
-        // Reset transient output panels when navigating away
-        if (tab !== "detect")
-          document.getElementById("detectOut").classList.add("hidden");
-        if (tab !== "diff")
-          document.getElementById("diffOut").classList.add("hidden");
-        document.getElementById("resultWrap").classList.add("hidden");
-        log(tab.toUpperCase() + " module loaded.");
+      // ── HISTORY ───────────────────────────────────────────────
+      function loadH() {
+        try {
+          return JSON.parse(localStorage.getItem(HIST_KEY)) || [];
+        } catch {
+          return [];
+        }
+      }
+      function saveH(e) {
+        localStorage.setItem(HIST_KEY, JSON.stringify(e));
       }
 
-      /* ── LOGGING ───────────────────────────────────────────── */
-      function log(msg, t) {
-        t = t || "i";
+      function addHistory(op, detail, color) {
+        const e = loadH();
+        e.unshift({
+          op,
+          detail,
+          color,
+          ts: new Date().toISOString(),
+          tsd: new Date().toLocaleTimeString("en-GB", { hour12: false }),
+        });
+        if (e.length > 100) e.splice(100);
+        saveH(e);
+        renderHistory();
+        pulseHist();
+      }
+
+      function renderHistory() {
+        const e = loadH(),
+          list = document.getElementById("histList"),
+          badge = document.getElementById("hbadge"),
+          cnt = document.getElementById("histCount");
+        cnt.textContent = `${e.length} op${e.length !== 1 ? "s" : ""}`;
+        badge.textContent = e.length;
+        badge.style.display = e.length ? "" : "none";
+        if (!e.length) {
+          list.innerHTML =
+            '<div class="hist-empty"><div class="hist-empty-icon">📋</div><div class="hist-empty-txt">No operations yet</div></div>';
+          return;
+        }
+        list.innerHTML = e
+          .map(
+            (x) =>
+              `<div class="hist-entry"><div class="hdot" style="background:${x.color}"></div><div class="hbody"><div class="hop" style="color:${x.color}">${x.op}</div><div class="hdetail">${x.detail}</div></div><div class="htime">${x.tsd}</div></div>`,
+          )
+          .join("");
+      }
+
+      function clearHistory() {
+        if (!confirm("Clear all history?")) return;
+        localStorage.removeItem(HIST_KEY);
+        renderHistory();
+        log("History cleared.");
+      }
+
+      function exportHistory() {
+        const e = loadH();
+        if (!e.length) {
+          toast("No history to export.", "info");
+          return;
+        }
+        const a = Object.assign(document.createElement("a"), {
+          href: URL.createObjectURL(
+            new Blob([JSON.stringify(e, null, 2)], {
+              type: "application/json",
+            }),
+          ),
+          download: `stego_history_${Date.now()}.json`,
+        });
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        toast("Exported.", "success");
+      }
+
+      function toggleHistory() {
+        histOpen = !histOpen;
+        document.getElementById("histPanel").classList.toggle("open", histOpen);
+        document
+          .getElementById("histToggle")
+          .classList.toggle("active", histOpen);
+      }
+
+      let _pt;
+      function pulseHist() {
+        const b = document.getElementById("histToggle");
+        b.style.borderColor = "rgba(255,159,10,0.7)";
+        clearTimeout(_pt);
+        _pt = setTimeout(() => (b.style.borderColor = ""), 900);
+      }
+
+      // ── TABS ──────────────────────────────────────────────────
+      function switchTab(t) {
+        TABS.forEach((x) => {
+          document.getElementById(`section-${x}`)?.classList.add("hidden");
+          document.getElementById(`tab-${x}`)?.classList.remove("active");
+        });
+        document.getElementById(`section-${t}`)?.classList.remove("hidden");
+        document.getElementById(`tab-${t}`)?.classList.add("active");
+        document.getElementById("resultWrap").classList.add("hidden");
+        if (t !== "detect")
+          document.getElementById("detectOut").classList.add("hidden");
+        if (t !== "diff")
+          document.getElementById("diffOut").classList.add("hidden");
+        if (t !== "strip")
+          document.getElementById("metaPreview").classList.add("hidden");
+        log(`${t.toUpperCase()} loaded.`);
+      }
+
+      // ── LOG / TOAST ───────────────────────────────────────────
+      function log(msg, t = "i") {
         const el = document.getElementById("console");
         const e = document.createElement("div");
         e.className = "log-e";
         const ts = new Date().toLocaleTimeString("en-GB", { hour12: false });
-        e.innerHTML =
-          '<span class="log-ts">' +
-          ts +
-          '</span><span class="c-' +
-          t +
-          '">' +
-          msg +
-          "</span>";
+        e.innerHTML = `<span class="log-ts">${ts}</span><span class="c-${t}">${msg}</span>`;
         el.appendChild(e);
         el.scrollTop = el.scrollHeight;
       }
@@ -1249,316 +1678,336 @@
         document.getElementById("console").innerHTML = "";
         log("Stream cleared.");
       }
-
-      /* ── TOAST ─────────────────────────────────────────────── */
-      var _tt;
-      function toast(msg, t) {
-        t = t || "info";
-        var el = document.getElementById("toast");
-        el.className = "t-" + t;
+      let _tt;
+      function toast(msg, t = "info") {
+        const el = document.getElementById("toast");
+        el.className = `t-${t}`;
         el.textContent = msg;
         el.classList.add("show");
         clearTimeout(_tt);
-        _tt = setTimeout(function () {
-          el.classList.remove("show");
-        }, 4200);
+        _tt = setTimeout(() => el.classList.remove("show"), 4200);
       }
 
-      /* ── ENCODE / DECODE TOGGLE ────────────────────────────── */
-      function setMode(mode) {
-        document.getElementById("imgMode").value = mode;
-        var hide = mode === "hide";
-        document.getElementById("btn-hide").className = hide
+      // ── MODE / DEPTH ──────────────────────────────────────────
+      function setMode(m) {
+        document.getElementById("imgMode").value = m;
+        const h = m === "hide";
+        document.getElementById("btn-hide").className = h
           ? "tgl-btn a-cyan"
           : "tgl-btn";
-        document.getElementById("btn-extract").className = hide
-          ? "tgl-btn"
-          : "tgl-btn a-green";
-        // Payload textarea and bit-depth only relevant when encoding
-        document
-          .getElementById("payloadField")
-          .classList.toggle("hidden", !hide);
-        document.getElementById("depthGroup").classList.toggle("hidden", !hide);
-        // Capacity bar only shown when encoding
-        if (!hide) document.getElementById("capWrap").classList.add("hidden");
+        document.getElementById("btn-extract").className = !h
+          ? "tgl-btn a-green"
+          : "tgl-btn";
+        document.getElementById("payloadField").classList.toggle("hidden", !h);
+        document.getElementById("depthGroup").classList.toggle("hidden", !h);
+        document.getElementById("capWrap").classList.toggle("hidden", !h);
       }
-
-      /* ── PDF MODE TOGGLE ───────────────────────────────────── */
-      function togglePdfPayload(sel) {
-        document
-          .getElementById("pdfPayloadField")
-          .classList.toggle("hidden", sel.value === "extract");
-      }
-
-      /* ── BIT DEPTH ─────────────────────────────────────────── */
       function setDepth(d, btn) {
         curDepth = d;
         document.getElementById("depthVal").value = d;
-        document.querySelectorAll(".depth-btn").forEach(function (b) {
-          b.classList.remove("active");
-        });
+        document
+          .querySelectorAll(".depth-btn")
+          .forEach((b) => b.classList.remove("active"));
         btn.classList.add("active");
-        var f = document.getElementById("imgFile");
+        const f = document.getElementById("imgFile");
         if (f.files[0]) fetchCap(f.files[0]);
       }
 
-      /* ── CAPACITY ──────────────────────────────────────────── */
-      document
-        .getElementById("imgFile")
-        .addEventListener("change", function (e) {
-          if (e.target.files[0]) fetchCap(e.target.files[0]);
-        });
-      document
-        .getElementById("payloadText")
-        .addEventListener("input", function (e) {
-          updateCap(e.target.value.length);
-        });
-
+      // ── CAPACITY ──────────────────────────────────────────────
+      document.getElementById("imgFile").onchange = (e) => {
+        if (e.target.files[0]) fetchCap(e.target.files[0]);
+      };
+      document.getElementById("payloadText").oninput = (e) =>
+        updateCap(e.target.value.length);
       async function fetchCap(file) {
-        var fd = new FormData();
+        const fd = new FormData();
         fd.append("file", file);
         fd.append("bit_depth", curDepth);
         log("Checking capacity…");
         try {
-          var res = await fetch("/process/capacity", {
-            method: "POST",
-            body: fd,
-          });
-          var d = await res.json();
+          const d = await (
+            await fetch("/process/capacity", { method: "POST", body: fd })
+          ).json();
           if (d.capacity !== undefined) {
             maxB = d.capacity;
             updateCap(document.getElementById("payloadText").value.length);
             document.getElementById("capWrap").classList.remove("hidden");
-            log(
-              maxB.toLocaleString() + " B available @ " + curDepth + "-bit.",
-              "s",
-            );
-          } else {
-            log("Capacity error: " + (d.error || "unknown"), "e");
+            log(`${maxB.toLocaleString()} B @ ${curDepth}-bit.`, "s");
           }
-        } catch (err) {
-          log("Capacity check failed: " + err.message, "e");
+        } catch {
+          log("Capacity check failed.", "e");
         }
       }
-
       function updateCap(len) {
         if (!maxB) return;
-        var pct = Math.min((len / maxB) * 100, 100);
-        var fill = document.getElementById("capFill");
-        fill.style.width = pct + "%";
-        fill.style.background =
+        const pct = Math.min((len / maxB) * 100, 100);
+        const f = document.getElementById("capFill");
+        f.style.width = pct + "%";
+        f.style.background =
           pct > 90 ? "var(--red)" : pct > 70 ? "var(--orange)" : "var(--cyan)";
         document.getElementById("capTxt").textContent =
-          len.toLocaleString() + " / " + maxB.toLocaleString() + " B";
+          `${len.toLocaleString()} / ${maxB.toLocaleString()} B`;
       }
-
-      /* ── COPY RESULT ───────────────────────────────────────── */
       function copyResult() {
-        var t = document.getElementById("resultTxt").textContent;
+        const t = document.getElementById("resultTxt").textContent;
         if (!t) return;
-        navigator.clipboard.writeText(t).then(function () {
-          log("Payload copied to clipboard.", "s");
-          toast("Copied to clipboard.", "success");
+        navigator.clipboard.writeText(t).then(() => {
+          log("Copied.", "s");
+          toast("Copied.", "success");
         });
       }
 
-      /* ── GENERIC FORM HANDLER ──────────────────────────────── */
-      // FIX: pass the submit button in explicitly so there's no ambiguity
-      async function handleForm(e, url, submitBtn) {
+      // ── GENERIC FORM ──────────────────────────────────────────
+      async function handleForm(e, url, histOp, histColor) {
         e.preventDefault();
-        var form = e.target;
-        var btn = submitBtn;
-        // FIX: read mode from the hidden input (imageForm) or select (pdfForm) by name
-        var modeEl = form.elements["mode"];
-        var mode = modeEl ? modeEl.value : "hide";
-
+        const form = e.target,
+          btn = form.querySelector("button[type=submit]"),
+          mode = form.mode?.value ?? "hide";
         btn.disabled = true;
-        var origText = btn.textContent;
+        const orig = btn.textContent;
         btn.innerHTML =
           '<i class="fas fa-circle-notch fa-spin" style="margin-right:8px"></i>Processing…';
-        log("→ " + url);
-
+        log(`→ ${url}`);
+        const fileName =
+          [...form.querySelectorAll("input[type=file]")]
+            .map((i) => i.files[0]?.name)
+            .filter(Boolean)
+            .join(", ") || "—";
         try {
-          var res = await fetch(url, {
+          const res = await fetch(url, {
             method: "POST",
             body: new FormData(form),
           });
-          var ct = res.headers.get("content-type") || "";
-
+          const ct = res.headers.get("content-type") || "";
           if (!res.ok) {
-            var errMsg;
-            if (ct.includes("json")) {
-              var errJson = await res.json();
-              errMsg = errJson.error || "Server error.";
-            } else {
-              errMsg = await res.text();
-            }
-            throw new Error(errMsg);
+            const err = ct.includes("json")
+              ? (await res.json()).error
+              : await res.text();
+            throw new Error(err || "Server error.");
           }
-
           if (mode === "hide" || url.includes("batch")) {
-            var blob = await res.blob();
-            var a = document.createElement("a");
-            a.href = URL.createObjectURL(blob);
-            a.download = url.includes("batch")
-              ? "stego_batch.zip"
-              : "stego_output.png";
+            const a = Object.assign(document.createElement("a"), {
+              href: URL.createObjectURL(await res.blob()),
+              download: url.includes("batch")
+                ? "stego_batch.zip"
+                : "stego_output.png",
+            });
             document.body.appendChild(a);
             a.click();
             a.remove();
-            log("Asset downloaded successfully.", "s");
+            log("Downloaded.", "s");
             toast("File downloaded.", "success");
+            addHistory(histOp, `ENCODE · ${fileName}`, histColor);
             form.reset();
             maxB = 0;
             updateCap(0);
-            document.getElementById("capWrap").classList.add("hidden");
           } else {
-            var data = await res.json();
+            const d = await res.json();
             document.getElementById("resultTxt").textContent =
-              data.result || "No data returned.";
+              d.result || "No data.";
             document.getElementById("resultWrap").classList.remove("hidden");
             log("Extraction complete.", "s");
             toast("Payload extracted.", "success");
+            addHistory(histOp, `DECODE · ${fileName}`, histColor);
             form.reset();
           }
         } catch (err) {
-          log("FAULT: " + err.message, "e");
+          log(err.message, "e");
           toast(err.message, "error");
         } finally {
           btn.disabled = false;
-          btn.textContent = origText;
+          btn.textContent = orig;
         }
       }
 
-      /* ── FORM BINDINGS ─────────────────────────────────────── */
-      document
-        .getElementById("imageForm")
-        .addEventListener("submit", function (e) {
-          handleForm(
-            e,
-            "/process/image",
-            document
-              .getElementById("imageForm")
-              .querySelector("button[type=submit]"),
-          );
-        });
-      document
-        .getElementById("batchForm")
-        .addEventListener("submit", function (e) {
-          handleForm(
-            e,
-            "/process/batch",
-            document
-              .getElementById("batchForm")
-              .querySelector("button[type=submit]"),
-          );
-        });
-      document
-        .getElementById("pdfForm")
-        .addEventListener("submit", function (e) {
-          handleForm(
-            e,
-            "/process/pdf",
-            document
-              .getElementById("pdfForm")
-              .querySelector("button[type=submit]"),
-          );
-        });
-
-      /* ── ANOMALY DETECTION ─────────────────────────────────── */
-      document
-        .getElementById("detectForm")
-        .addEventListener("submit", async function (e) {
-          e.preventDefault();
-          var btn = document
-            .getElementById("detectForm")
-            .querySelector("button[type=submit]");
-          btn.disabled = true;
-          btn.innerHTML =
-            '<i class="fas fa-circle-notch fa-spin" style="margin-right:8px"></i>Scanning…';
-          log("Running anomaly scan…");
-          try {
-            var res = await fetch("/process/detect", {
+      // ── DETECT ────────────────────────────────────────────────
+      document.getElementById("detectForm").onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector("button");
+        btn.disabled = true;
+        btn.innerHTML =
+          '<i class="fas fa-circle-notch fa-spin" style="margin-right:8px"></i>Scanning…';
+        const fn =
+          document.querySelector("#detectForm input[type=file]").files[0]
+            ?.name || "—";
+        log("Scanning…");
+        try {
+          const d = await (
+            await fetch("/process/detect", {
               method: "POST",
               body: new FormData(e.target),
-            });
-            var data = await res.json();
-            if (data.error) throw new Error(data.error);
-
-            var susp = data.status === "Suspicious";
-            document.getElementById("threatVal").textContent =
-              data.status || "Unknown";
-            document.getElementById("threatVal").style.color = susp
-              ? "var(--orange)"
-              : "var(--green)";
-            document.getElementById("threatMsg").textContent =
-              data.message || "";
-            var fill = document.getElementById("threatFill");
-            fill.style.width = susp ? "65%" : "12%";
-            fill.style.background = susp ? "var(--orange)" : "var(--green)";
-
-            if (data.heatmap_url) {
-              document.getElementById("heatmapImg").src =
-                data.heatmap_url + "?t=" + Date.now();
-              document.getElementById("heatmapWrap").classList.remove("hidden");
-            }
-            document.getElementById("detectOut").classList.remove("hidden");
-            log("Scan complete: " + data.status, susp ? "e" : "s");
-          } catch (err) {
-            log("SCANNER FAULT: " + err.message, "e");
-            toast(err.message, "error");
-          } finally {
-            btn.disabled = false;
-            btn.textContent = "Scan for Hidden Payload";
+            })
+          ).json();
+          if (d.error) throw new Error(d.error);
+          const s = d.status === "Suspicious";
+          document.getElementById("threatVal").textContent = d.status;
+          document.getElementById("threatVal").style.color = s
+            ? "var(--orange)"
+            : "var(--green)";
+          document.getElementById("threatMsg").textContent = d.message;
+          const f = document.getElementById("threatFill");
+          f.style.width = s ? "65%" : "12%";
+          f.style.background = s ? "var(--orange)" : "var(--green)";
+          if (d.heatmap_url) {
+            document.getElementById("heatmapImg").src =
+              d.heatmap_url + "?t=" + Date.now();
+            document.getElementById("heatmapWrap").classList.remove("hidden");
           }
-        });
+          document.getElementById("detectOut").classList.remove("hidden");
+          log("Scan: " + d.status, s ? "e" : "s");
+          addHistory(
+            "ANOMALY SCAN",
+            `${d.status} · ${fn}`,
+            s ? "var(--orange)" : "var(--green)",
+          );
+        } catch (err) {
+          log(err.message, "e");
+          toast(err.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Scan for Hidden Payload";
+        }
+      };
 
-      /* ── VISUAL DIFF ───────────────────────────────────────── */
-      document
-        .getElementById("diffForm")
-        .addEventListener("submit", async function (e) {
-          e.preventDefault();
-          var btn = document
-            .getElementById("diffForm")
-            .querySelector("button[type=submit]");
-          btn.disabled = true;
-          btn.innerHTML =
-            '<i class="fas fa-circle-notch fa-spin" style="margin-right:8px"></i>Computing…';
-          log("Generating visual diff…");
-          try {
-            var res = await fetch("/process/diff", {
+      // ── DIFF ──────────────────────────────────────────────────
+      document.getElementById("diffForm").onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector("button");
+        btn.disabled = true;
+        btn.innerHTML =
+          '<i class="fas fa-circle-notch fa-spin" style="margin-right:8px"></i>Computing…';
+        log("Diff…");
+        try {
+          const d = await (
+            await fetch("/process/diff", {
               method: "POST",
               body: new FormData(e.target),
-            });
-            var data = await res.json();
-            if (data.error) throw new Error(data.error);
+            })
+          ).json();
+          if (d.error) throw new Error(d.error);
+          document.getElementById("dPx").textContent =
+            d.changed_pixels.toLocaleString();
+          document.getElementById("dPct").textContent = d.percent_changed + "%";
+          document.getElementById("dMax").textContent = d.max_diff;
+          const u = d.diff_url + "?t=" + Date.now();
+          document.getElementById("diffImg").src = u;
+          document.getElementById("diffDL").href = u;
+          document.getElementById("diffOut").classList.remove("hidden");
+          log(
+            `${d.changed_pixels.toLocaleString()} px (${d.percent_changed}%)`,
+            "s",
+          );
+          toast(`${d.percent_changed}% pixels differ.`, "info");
+          addHistory(
+            "VISUAL DIFF",
+            `${d.percent_changed}% pixels modified`,
+            "#c084fc",
+          );
+        } catch (err) {
+          log(err.message, "e");
+          toast(err.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.textContent = "Generate Diff";
+        }
+      };
 
-            document.getElementById("dPx").textContent =
-              data.changed_pixels.toLocaleString();
-            document.getElementById("dPct").textContent =
-              data.percent_changed + "%";
-            document.getElementById("dMax").textContent = data.max_diff;
-
-            var url = data.diff_url + "?t=" + Date.now();
-            document.getElementById("diffImg").src = url;
-            document.getElementById("diffDL").href = url;
-            document.getElementById("diffOut").classList.remove("hidden");
-            log(
-              data.changed_pixels.toLocaleString() +
-                " px changed (" +
-                data.percent_changed +
-                "%).",
-              "s",
-            );
-            toast(data.percent_changed + "% of pixels differ.", "info");
-          } catch (err) {
-            log("DIFF FAULT: " + err.message, "e");
-            toast(err.message, "error");
-          } finally {
-            btn.disabled = false;
-            btn.textContent = "Generate Diff";
+      // ── EXIF STRIP ────────────────────────────────────────────
+      document.getElementById("stripFile").onchange = async function (e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        const dt = new DataTransfer();
+        dt.items.add(file);
+        document.getElementById("stripHiddenFile").files = dt.files;
+        document.getElementById("stripBtn").disabled = false;
+        log("Reading metadata…");
+        const fd = new FormData();
+        fd.append("file", file);
+        try {
+          const d = await (
+            await fetch("/process/strip_info", { method: "POST", body: fd })
+          ).json();
+          if (d.error) throw new Error(d.error);
+          const total = d.total_fields;
+          const badge = document.getElementById("metaBadge");
+          badge.textContent = total
+            ? `${total} field${total !== 1 ? "s" : ""} found`
+            : "No metadata found";
+          badge.className = `meta-badge ${total ? "mbad-dirty" : "mbad-clean"}`;
+          const all = { ...d.info_fields, ...d.exif_fields };
+          const body = document.getElementById("metaBody");
+          if (!total) {
+            body.innerHTML =
+              "<div style=\"font-family:'DM Mono',monospace;font-size:11px;color:var(--green);padding:20px;text-align:center\">✓ Image is already clean — no metadata found</div>";
+          } else {
+            const rows = Object.entries(all)
+              .map(
+                ([k, v]) =>
+                  `<tr><td>${esc(k)}</td><td>${esc(String(v))}</td></tr>`,
+              )
+              .join("");
+            body.innerHTML = `<table class="meta-table"><thead><tr><th>Field</th><th>Value</th></tr></thead><tbody>${rows}</tbody></table>`;
           }
-        });
+          document.getElementById("metaPreview").classList.remove("hidden");
+          log(`${total} metadata field(s) found.`, total ? "e" : "s");
+        } catch (err) {
+          log(err.message, "e");
+        }
+      };
+
+      document.getElementById("stripForm").onsubmit = async (e) => {
+        e.preventDefault();
+        const btn = e.target.querySelector("button");
+        btn.disabled = true;
+        btn.innerHTML =
+          '<i class="fas fa-circle-notch fa-spin" style="margin-right:8px"></i>Stripping…';
+        const fn = document.getElementById("stripFile").files[0]?.name || "—";
+        log("Stripping metadata…");
+        try {
+          const res = await fetch("/process/strip", {
+            method: "POST",
+            body: new FormData(e.target),
+          });
+          if (!res.ok) {
+            const d = await res.json();
+            throw new Error(d.error || "Strip failed.");
+          }
+          const a = Object.assign(document.createElement("a"), {
+            href: URL.createObjectURL(await res.blob()),
+            download: `clean_${fn.replace(/\.[^.]+$/, "")}.png`,
+          });
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          log("Clean image downloaded.", "s");
+          toast("Metadata stripped & downloaded.", "success");
+          addHistory("EXIF STRIP", `Cleaned · ${fn}`, "var(--teal)");
+        } catch (err) {
+          log(err.message, "e");
+          toast(err.message, "error");
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML =
+            '<i class="fas fa-eraser" style="margin-right:8px"></i>Strip All Metadata & Download';
+        }
+      };
+
+      function esc(s) {
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;");
+      }
+
+      // ── BINDINGS ──────────────────────────────────────────────
+      document.getElementById("imageForm").onsubmit = (e) =>
+        handleForm(e, "/process/image", "IMAGE STEGO", "var(--cyan)");
+      document.getElementById("batchForm").onsubmit = (e) =>
+        handleForm(e, "/process/batch", "BATCH ENCODE", "var(--violet)");
+      document.getElementById("pdfForm").onsubmit = (e) =>
+        handleForm(e, "/process/pdf", "PDF VAULT", "var(--red)");
+
+      renderHistory();
     </script>
   </body>
 </html>
