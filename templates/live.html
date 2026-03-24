@@ -712,6 +712,14 @@
         font-style: italic;
         padding: 3px 0;
       }
+      .pkt-overlay .pkt-icon {
+        cursor: pointer;
+        transition: transform 0.2s;
+      }
+      .pkt-overlay .pkt-icon:hover {
+        transform: scale(1.2);
+        color: #fff;
+      }
     </style>
   </head>
   <body>
@@ -801,9 +809,17 @@
               class="carrier-btn"
               onclick="document.getElementById('carrierIn').click()"
             >
-              <span id="carrierLbl">Select carrier image</span
-              ><i class="fas fa-image" style="font-size: 12px"></i>
+              <span id="carrierLbl">Select carrier file</span>
+              <i class="fas fa-file-import" style="font-size: 12px"></i>
             </button>
+
+            <input
+              id="carrierIn"
+              type="file"
+              accept="image/png,image/bmp,application/pdf"
+              style="display: none"
+              onchange="onCarrier(this)"
+            />
             <input
               class="cmp-input"
               id="passDisplay"
@@ -944,10 +960,22 @@
 
       // ── CARRIER ───────────────────────────────────────────────
       function onCarrier(inp) {
-        const nm = inp.files[0]?.name || "Select carrier image";
+        const file = inp.files[0];
+        const nm = file?.name || "Select carrier file";
+
+        // Update the label text
         document.getElementById("carrierLbl").textContent =
           nm.length > 22 ? nm.slice(0, 19) + "…" : nm;
-        klog(`Carrier: ${nm}`, "i");
+
+        // Check the file type for the log
+        if (file && file.type === "application/pdf") {
+          // Uses the 'v' (violet) class for a distinct "Secure Vault" look
+          klog(`Carrier: ${nm} (PDF Vault detected)`, "v");
+        } else if (file) {
+          klog(`Carrier: ${nm} (Image LSB detected)`, "i");
+        } else {
+          klog("Select carrier file", "i");
+        }
       }
 
       // ── AUTO-DECRYPT TOGGLE ───────────────────────────────────
@@ -963,36 +991,45 @@
       async function sendSecret() {
         const msg = document.getElementById("msgIn").value.trim();
         const btn = document.getElementById("sendBtn");
-        if (!msg) {
-          klog("ERR: Empty payload.", "e");
+        const fi = document.getElementById("carrierIn");
+        const file = fi.files[0];
+
+        if (!msg && !file) {
+          klog("ERR: Nothing to send.", "e");
           return;
         }
-        if (!myRoom) {
-          klog("ERR: Not in a room.", "e");
-          return;
-        }
+
         btn.disabled = true;
-        btn.innerHTML =
-          '<i class="fas fa-circle-notch fa-spin" style="margin-right:8px"></i>Encoding…';
+        btn.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Encoding…';
 
         let b64 = null;
-        const fi = document.getElementById("carrierIn");
-        if (fi.files[0])
+        let fileType = "image/png"; // Default
+
+        if (file) {
+          fileType = file.type; // This will be "application/pdf" for PDFs
           b64 = await new Promise((res) => {
             const r = new FileReader();
             r.onload = (e) => res(e.target.result);
-            r.readAsDataURL(fi.files[0]);
+            r.readAsDataURL(file);
           });
+        }
 
-        klog("Injecting AES payload…", "i");
+        klog(`Tunneling ${fileType}…`, "i");
+
+        // We send the file_type so the Python backend knows which logic to use
         socket.emit("send_secure_msg", {
           msg,
           password: myPass,
           carrier: b64,
+          file_type: fileType,
           room: myRoom,
           codename: myCodename,
         });
+
         document.getElementById("msgIn").value = "";
+        fi.value = ""; // Clear file after sending
+        document.getElementById("carrierLbl").textContent =
+          "Select carrier file";
         btn.disabled = false;
         btn.innerHTML =
           '<i class="fas fa-paper-plane" style="margin-right:8px"></i>Execute Protocol Send';
@@ -1012,37 +1049,95 @@
         const feed = document.getElementById("feed");
         const card = document.createElement("div");
         card.className = "pkt";
-        const sender = data.codename || "UNKNOWN";
-        card.innerHTML = `
-      <img src="data:image/png;base64,${data.image}" alt="pkt"/>
-      <div class="pkt-overlay" onclick="manualDecode('${data.image}','${sender}')">
-        <div class="pkt-icon"><i class="fas fa-unlock-alt"></i></div>
-        <div class="pkt-lbl">Decode</div>
-      </div>
-      <div class="pkt-meta">
-        <span class="pkt-num">#${pCount}</span>
-        <span class="pkt-sender">${sender}</span>
-      </div>
-    `;
-        feed.prepend(card);
-        klog(`[INBOUND] Packet #${pCount} from ${sender}.`, "w");
 
-        if (autoDecrypt && myPass)
+        const sender = data.codename || "UNKNOWN";
+        const isPDF = data.file_type === "application/pdf";
+        const fileType = data.file_type || "image/png";
+
+        const previewContent = isPDF
+          ? `<div style="height:110px; display:flex; align-items:center; justify-content:center; background:#1a0808; color:var(--red); font-size:30px;"><i class="fas fa-file-pdf"></i></div>`
+          : `<img src="${data.image.startsWith("data") ? data.image : "data:image/png;base64," + data.image}" alt="pkt"/>`;
+
+        // UPDATED: Overlay now contains two separate clickable icons instead of one global click
+        card.innerHTML = `
+    ${previewContent}
+    <div class="pkt-overlay">
+      <div style="display: flex; gap: 20px;">
+        <div class="pkt-icon" onclick="downloadPacket('${data.image}', '${fileType}')" title="Download File">
+          <i class="fas fa-file-download"></i>
+        </div>
+        <div class="pkt-icon" onclick="manualDecode('${data.image}', '${sender}', '${fileType}')" title="Extract Secret">
+          <i class="fas fa-unlock-alt" style="color:var(--green)"></i>
+        </div>
+      </div>
+      <div class="pkt-lbl">Actions</div>
+    </div>
+    <div class="pkt-meta">
+      <span class="pkt-num">#${pCount}</span>
+      <span class="pkt-sender">${sender}</span>
+    </div>
+  `;
+
+        feed.prepend(card);
+        klog(
+          `[INBOUND] ${isPDF ? "PDF Document" : "Image Packet"} from ${sender}.`,
+          "w",
+        );
+
+        if (autoDecrypt && myPass) {
           socket.emit("decrypt_packet", {
             image: data.image,
             password: myPass,
-            bit_depth: data.bit_depth || 1,
+            file_type: data.file_type,
           });
-        else klog("Enter AES key or enable auto-decrypt.", "i");
+        }
       });
 
-      function manualDecode(b64, sender) {
+      function downloadPacket(base64Data, type) {
+        const link = document.createElement("a");
+
+        // Ensure the base64 has the correct header
+        const uri = base64Data.startsWith("data:")
+          ? base64Data
+          : `data:${type};base64,${base64Data}`;
+
+        link.href = uri;
+        link.download = type.includes("pdf")
+          ? `secret_${Date.now()}.pdf`
+          : `stego_${Date.now()}.png`;
+
+        // Append to body to make it "clickable" in some browsers
+        document.body.appendChild(link);
+        link.click();
+
+        // CRITICAL FIX: Remove only the link, NOT the body
+        document.body.removeChild(link);
+
+        klog("File downloaded successfully.", "s");
+      }
+
+      // Helper to download the file directly from the socket packet
+      function manualDownload(b64Data, type) {
+        const a = document.createElement("a");
+        a.href = b64Data;
+        a.download = type.includes("pdf") ? "secret.pdf" : "stego.png";
+        a.click();
+      }
+
+      function manualDecode(b64, sender, type) {
         if (!myPass) {
           klog("ERR: No AES key set.", "e");
           return;
         }
-        klog(`Decrypting packet from ${sender}…`, "i");
-        socket.emit("decrypt_packet", { image: b64, password: myPass });
+        klog(
+          `Decrypting ${type.includes("pdf") ? "PDF" : "Image"} from ${sender}...`,
+          "i",
+        );
+        socket.emit("decrypt_packet", {
+          image: b64,
+          password: myPass,
+          file_type: type,
+        });
       }
 
       socket.on("decrypted_result", (data) => {

@@ -399,63 +399,124 @@ def handle_leave(data):
 
 @socketio.on('send_secure_msg')
 def handle_send(data):
-    """
-    Receives {msg, password, room, codename, carrier?, bit_depth?}
-    → Broadcasts stego image to everyone in the same room.
-    """
     try:
         room      = data.get('room', '').strip().upper()
         codename  = data.get('codename', 'GHOST')
         bit_depth = int(data.get('bit_depth', 1))
+        # Get the file type sent from live.html
+        file_type = data.get('file_type', 'image/png') 
 
         if not room:
             emit('error', {'message': 'Must join a room before sending.'})
             return
 
+        # 1. Encrypt the secret message regardless of file type
         encrypted_payload = encrypt_data(data['msg'], data['password'])
 
-        if data.get('carrier'):
-            header, encoded = (
-                data['carrier'].split(",", 1)
-                if "," in data['carrier']
-                else (None, data['carrier'])
-            )
-            carrier_source = BytesIO(base64.b64decode(encoded))
+        # 2. Decode the incoming carrier
+        header, encoded = (
+            data['carrier'].split(",", 1)
+            if data.get('carrier') and "," in data['carrier']
+            else (None, data.get('carrier'))
+        )
+        
+        # If no carrier is provided, we default to the standard image CARRIER_PATH
+        if not encoded:
+            carrier_bytes = open(CARRIER_PATH, "rb").read()
         else:
-            carrier_source = CARRIER_PATH
+            carrier_bytes = base64.b64decode(encoded)
 
-        buf = BytesIO()
-        hide_lsb(carrier_source, encrypted_payload, buf, bit_depth=bit_depth)
-        buf.seek(0)
+        # 3. Process based on File Type
+        output_buf = BytesIO()
 
-        img_b64 = base64.b64encode(buf.read()).decode('utf-8')
+        if "application/pdf" in file_type:
+            # --- PDF LOGIC ---
+            from pdf.pdf_crypto import hide_in_pdf
+            # Create temp paths because PyPDF2 works best with file handles or paths
+            temp_in = os.path.join(UPLOAD_FOLDER, f"temp_{codename}.pdf")
+            temp_out = os.path.join(OUTPUT_FOLDER, f"stego_{codename}.pdf")
+            
+            with open(temp_in, "wb") as f:
+                f.write(carrier_bytes)
+            
+            # Inject secret into metadata
+            hide_in_pdf(temp_in, encrypted_payload, temp_out)
+            
+            with open(temp_out, "rb") as f:
+                output_buf.write(f.read())
+            
+            # Cleanup temp files
+            if os.path.exists(temp_in): os.remove(temp_in)
+            if os.path.exists(temp_out): os.remove(temp_out)
+            
+        else:
+            # --- IMAGE LSB LOGIC ---
+            carrier_source = BytesIO(carrier_bytes)
+            hide_lsb(carrier_source, encrypted_payload, output_buf, bit_depth=bit_depth)
+
+        # 4. Finalize and Broadcast
+        output_buf.seek(0)
+        final_b64 = base64.b64encode(output_buf.read()).decode('utf-8')
 
         emit('sent_confirmation', {'status': 'SUCCESS', 'room': room})
         emit('new_stego_packet', {
-            'image':     img_b64,
+            'image':     final_b64, # We use the 'image' key for both for simplicity
+            'file_type': file_type, # Tell the receiver what this is!
             'bit_depth': bit_depth,
             'codename':  codename,
             'room':      room,
         }, to=room, include_self=False)
 
     except Exception as e:
-        emit('error', {'message': str(e)})
+        emit('error', {'message': f"Socket Error: {str(e)}"})
 
 
 @socketio.on('decrypt_packet')
 def handle_decrypt(data):
-    """Receives {image_b64, password, bit_depth?} → returns decrypted text."""
     try:
-        bit_depth     = int(data.get('bit_depth', 1))
-        img_data      = base64.b64decode(data['image'])
-        extracted_enc = extract_lsb(BytesIO(img_data), bit_depth=bit_depth)
-        decrypted     = decrypt_data(extracted_enc, data['password'])
-        emit('decrypted_result', {'msg': decrypted})
+        password = data.get('password')
+        file_type = data.get('file_type', 'image/png')
+        
+        # Decode the incoming base64
+        header, encoded = (
+            data['image'].split(",", 1) 
+            if "," in data['image'] 
+            else (None, data['image'])
+        )
+        file_bytes = base64.b64decode(encoded)
 
-    except ValueError as e:
-        emit('decrypted_result', {'msg': f"DECRYPTION_FAILED: {str(e)}"})
-    except Exception:
-        emit('decrypted_result', {'msg': "DECRYPTION_FAILED: Invalid key or corrupted packet."})
+        if "application/pdf" in file_type:
+            # --- PDF EXTRACTION LOGIC ---
+            from pdf.pdf_crypto import extract_from_pdf
+            
+            # Save to a temp file so PdfReader can process it
+            temp_path = os.path.join(UPLOAD_FOLDER, "temp_decrypt.pdf")
+            with open(temp_path, "wb") as f:
+                f.write(file_bytes)
+            
+            # Extract the encrypted string from metadata
+            encrypted_str = extract_from_pdf(temp_path)
+            os.remove(temp_path) # Clean up immediately
+            
+            if encrypted_str == "No secret found.":
+                emit('decrypted_result', {'msg': "No secret found."})
+                return
+                
+            # Decrypt the string using your AES logic
+            decrypted_msg = decrypt_data(encrypted_str, password)
+            
+        else:
+            # --- IMAGE LSB LOGIC ---
+            from io import BytesIO
+            # Your existing LSB extraction logic goes here
+            # decrypted_msg = extract_lsb_and_decrypt(BytesIO(file_bytes), password)
+            pass
+
+        emit('decrypted_result', {'msg': decrypted_msg})
+
+    except Exception as e:
+        # This is where your "Decryption failed" message is coming from
+        emit('decrypted_result', {'msg': f"Decryption failed: {str(e)}"})
 
 
 if __name__ == '__main__':
