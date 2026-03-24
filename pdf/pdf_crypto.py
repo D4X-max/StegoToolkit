@@ -17,4 +17,9 @@ def hide_in_pdf(input_pdf, secret_data, output_pdf):
 def extract_from_pdf(pdf_path):
     reader = PdfReader(pdf_path)
     metadata = reader.metadata
-    return metadata.get('/SecretKey', "No secret found.")
+    secret = metadata.get('/SecretKey')
+    
+    if secret:
+        # Cast to string to ensure it's not a PyPDF2 internal object
+        return str(secret) 
+    return "No secret found."

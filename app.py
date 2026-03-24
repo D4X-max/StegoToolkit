@@ -304,44 +304,57 @@ def process_batch():
 
 @app.route('/process/pdf', methods=['POST'])
 def process_pdf():
-    mode     = request.form.get('mode')
+    mode = request.form.get('mode')
     password = request.form.get('password', '').strip()
-    file     = request.files.get('file')
+    file = request.files.get('file')
 
     if not file or file.filename == '':
         return error_response("No PDF file provided.")
     if not password:
         return error_response("A passphrase is required.")
 
-    filepath    = os.path.join(UPLOAD_FOLDER, file.filename)
-    output_path = os.path.join(OUTPUT_FOLDER, "secret_" + file.filename)
+    # Secure the filename to prevent directory traversal attacks
+    from werkzeug.utils import secure_filename
+    clean_name = secure_filename(file.filename)
+    
+    filepath = os.path.join(UPLOAD_FOLDER, clean_name)
+    output_path = os.path.join(OUTPUT_FOLDER, "secret_" + clean_name)
     file.save(filepath)
 
     try:
         if mode == 'hide':
             text = request.form.get('text', '').strip()
             if not text:
-                return error_response("Payload text is required for PDF injection.")
+                return error_response("Payload text is required.")
+            
             encrypted = encrypt_data(text, password)
             hide_in_pdf(filepath, encrypted, output_path)
+            
+            # Use a 'finally' style cleanup or send_file will block deletion
             return send_file(output_path, as_attachment=True)
 
         elif mode == 'extract':
             extracted_enc = extract_from_pdf(filepath)
+            
             if extracted_enc == "No secret found.":
                 return jsonify({"result": "No secret found in this PDF."})
+            
             decrypted = decrypt_data(extracted_enc, password)
+            
+            # Clean up the upload after extraction
+            if os.path.exists(filepath):
+                os.remove(filepath)
+                
             return jsonify({"result": decrypted})
 
         else:
             return error_response(f"Unknown mode '{mode}'.")
 
-    except ValueError as e:
-        safe_remove(filepath, output_path)
-        return error_response(str(e))
     except Exception as e:
-        safe_remove(filepath, output_path)
-        return error_response(f"PDF processing failed: {str(e)}", 500)
+        # Ensure files are removed if something crashes mid-process
+        if os.path.exists(filepath): os.remove(filepath)
+        if os.path.exists(output_path): os.remove(output_path)
+        return error_response(f"PDF Error: {str(e)}", 500)
 
 # ─── STATIC OUTPUT SERVING ───────────────────────────────────
 

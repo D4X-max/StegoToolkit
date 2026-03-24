@@ -1763,45 +1763,59 @@
         const form = e.target,
           btn = form.querySelector("button[type=submit]"),
           mode = form.mode?.value ?? "hide";
+
         btn.disabled = true;
         const orig = btn.textContent;
         btn.innerHTML =
           '<i class="fas fa-circle-notch fa-spin" style="margin-right:8px"></i>Processing…';
+
         log(`→ ${url}`);
-        const fileName =
-          [...form.querySelectorAll("input[type=file]")]
-            .map((i) => i.files[0]?.name)
-            .filter(Boolean)
-            .join(", ") || "—";
+
+        const fileInput = form.querySelector("input[type=file]");
+        const uploadedFile = fileInput?.files[0];
+        const fileName = uploadedFile?.name || "—";
+
         try {
           const res = await fetch(url, {
             method: "POST",
             body: new FormData(form),
           });
+
           const ct = res.headers.get("content-type") || "";
+
           if (!res.ok) {
             const err = ct.includes("json")
               ? (await res.json()).error
               : await res.text();
             throw new Error(err || "Server error.");
           }
+
           if (mode === "hide" || url.includes("batch")) {
+            const blob = await res.blob();
+
+            // Determine correct extension based on Content-Type or URL
+            let downloadName = "stego_output.png";
+            if (url.includes("batch")) {
+              downloadName = "stego_batch.zip";
+            } else if (ct.includes("application/pdf")) {
+              downloadName = "secret_document.pdf";
+            }
+
             const a = Object.assign(document.createElement("a"), {
-              href: URL.createObjectURL(await res.blob()),
-              download: url.includes("batch")
-                ? "stego_batch.zip"
-                : "stego_output.png",
+              href: URL.createObjectURL(blob),
+              download: downloadName,
             });
+
             document.body.appendChild(a);
             a.click();
             a.remove();
+
             log("Downloaded.", "s");
             toast("File downloaded.", "success");
             addHistory(histOp, `ENCODE · ${fileName}`, histColor);
             form.reset();
-            maxB = 0;
-            updateCap(0);
           } else {
+            // Extraction logic (JSON)
             const d = await res.json();
             document.getElementById("resultTxt").textContent =
               d.result || "No data.";
