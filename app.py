@@ -476,8 +476,8 @@ def handle_decrypt(data):
     try:
         password = data.get('password')
         file_type = data.get('file_type', 'image/png')
+        bit_depth = int(data.get('bit_depth', 1)) # Use bit_depth from frontend
         
-        # Decode the incoming base64
         header, encoded = (
             data['image'].split(",", 1) 
             if "," in data['image'] 
@@ -488,34 +488,35 @@ def handle_decrypt(data):
         if "application/pdf" in file_type:
             # --- PDF EXTRACTION LOGIC ---
             from pdf.pdf_crypto import extract_from_pdf
-            
-            # Save to a temp file so PdfReader can process it
             temp_path = os.path.join(UPLOAD_FOLDER, "temp_decrypt.pdf")
             with open(temp_path, "wb") as f:
                 f.write(file_bytes)
             
-            # Extract the encrypted string from metadata
             encrypted_str = extract_from_pdf(temp_path)
-            os.remove(temp_path) # Clean up immediately
+            if os.path.exists(temp_path): os.remove(temp_path)
             
             if encrypted_str == "No secret found.":
                 emit('decrypted_result', {'msg': "No secret found."})
                 return
                 
-            # Decrypt the string using your AES logic
             decrypted_msg = decrypt_data(encrypted_str, password)
             
         else:
-            # --- IMAGE LSB LOGIC ---
+            # --- IMAGE LSB LOGIC (FIXED) ---
             from io import BytesIO
-            # Your existing LSB extraction logic goes here
-            # decrypted_msg = extract_lsb_and_decrypt(BytesIO(file_bytes), password)
-            pass
+            # 1. Extract the encrypted payload from the pixels
+            # Ensure your extract_lsb function matches your library's name
+            from stego.lsb import extract_lsb 
+            
+            carrier_source = BytesIO(file_bytes)
+            encrypted_payload = extract_lsb(carrier_source, bit_depth=bit_depth)
+            
+            # 2. Decrypt the extracted string
+            decrypted_msg = decrypt_data(encrypted_payload, password)
 
         emit('decrypted_result', {'msg': decrypted_msg})
 
     except Exception as e:
-        # This is where your "Decryption failed" message is coming from
         emit('decrypted_result', {'msg': f"Decryption failed: {str(e)}"})
 
 
